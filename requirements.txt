@@ -1,4 +1,4 @@
-langchain==0.0.231
+langchain==0.0.201
 python-dotenv==1.0.0
 streamlit==1.18.1
 altair<5
