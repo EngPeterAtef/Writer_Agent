@@ -1,4 +1,4 @@
-from langchain.agents import Tool, initialize_agent, AgentType, load_tools
+from langchain.agents import Tool, initialize_agent, AgentType
 from langchain.utilities import (
     WikipediaAPIWrapper,
     GoogleSearchAPIWrapper,
@@ -162,13 +162,11 @@ def main():
         The results summary is: {summary}.
         The final blog will be {wordCount} words long, with an introduction at the beginning and a conclusion at the end of the blog.
         use the following template to write the blog:
-        [BLOG]
-        [title]
-        [subtitle]
+        [TITLE]
+        [SUBTITLE]
         [introduction]
-        [body in bullet points]
-        [summary]
-        [END BLOG]
+        [BODY IN DETIALED BULLET POINTS]
+        [SUMMARY AND CONCLUSION]
         """
 
         prompt_writer_template = PromptTemplate(
@@ -200,7 +198,8 @@ def main():
 
         st.header("Enter the topic of the blog")
         myTopic = st.text_input("Write a blog about: ", key="query")
-        if myTopic:
+        goBtn = st.button("Go",key="go",use_container_width=True)
+        if myTopic or goBtn:
             try:
                 start = time.time()
                 keyword_list = keyword_agent.run(
