@@ -16,7 +16,7 @@ from langchain.chat_models import ChatOpenAI
 import streamlit as st
 import time
 import os
-
+import wikipedia
 
 def main():
     keys_flag = False
