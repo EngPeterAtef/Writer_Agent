@@ -276,8 +276,9 @@ def main():
                     st.write(tot_summary2[0 : len(tot_summary2) // 2] + ".........")
                     end = time.time()
                     st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
-                except:
-                    print("error in summarizing the search results")
+                except Exception as e:
+                    st.error("Something went wrong, please try again")
+                    st.error(e)
                 # write the blog
                 start = time.time()
                 draft1 = writer_chain.run(
@@ -305,8 +306,10 @@ def main():
                 st.write(
                     f"> Generating the first draft took ({round(end - start, 2)} s)"
                 )
-            except:
+            except Exception as e:
                 st.error("Something went wrong, please try again")
+                st.error(e)
+
 
 
 if __name__ == "__main__":
