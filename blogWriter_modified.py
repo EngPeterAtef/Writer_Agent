@@ -4,7 +4,7 @@ from langchain.utilities import (
     GoogleSearchAPIWrapper,
 )
 from langchain.tools import WikipediaQueryRun, DuckDuckGoSearchRun
-from langchain import OpenAI, Wikipedia
+from langchain import OpenAI
 
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
