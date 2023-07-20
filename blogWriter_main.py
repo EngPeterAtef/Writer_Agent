@@ -247,11 +247,22 @@ def main():
                     f"> Generating the search results took ({round(end - start, 2)} s)"
                 )
                 # Summarize the search results
+                st.write("### Summarize the search results separately")
                 start = time.time()
                 google_summary = summary_chain.run(essay=google_results)
+                st.write("#### Google Search Results Summary")
+                st.write(google_summary[0 : len(google_summary) // 4] + ".........")
                 wiki_summary = summary_chain.run(essay=wiki_results)
+                st.write("#### Wikipedia Search Results Summary")
+                st.write(wiki_summary[0 : len(wiki_summary) // 4] + ".........")
                 duck_summary = summary_chain.run(essay=duck_results)
+                st.write("#### DuckDuckGo Search Results Summary")
+                st.write(duck_summary[0 : len(duck_summary) // 4] + ".........")
                 wiki_query_summary = summary_chain.run(essay=wiki_query_results)
+                st.write("#### Wikipedia Query Search Results Summary")
+                st.write(
+                    wiki_query_summary[0 : len(wiki_query_summary) // 4] + "........."
+                )
                 # Summarize the search results together
                 docs = text_spitter.create_documents(
                     [google_results, wiki_results, duck_results, wiki_query_results]
@@ -259,17 +270,6 @@ def main():
                 tot_summary = summary_chain2.run(docs)
                 tot_summary2 = summary_agent.run(
                     f"can you provide me a summary about {myTopic} from each search engine separately? \ then use this information to combine all the summaries together to get a blog about {myTopic}."
-                )
-                st.write("### Summarize the search results separately")
-                st.write("#### Google Search Results Summary")
-                st.write(google_summary[0 : len(google_summary) // 4] + ".........")
-                st.write("#### Wikipedia Search Results Summary")
-                st.write(wiki_summary[0 : len(wiki_summary) // 4] + ".........")
-                st.write("#### DuckDuckGo Search Results Summary")
-                st.write(duck_summary[0 : len(duck_summary) // 4] + ".........")
-                st.write("#### Wikipedia Query Search Results Summary")
-                st.write(
-                    wiki_query_summary[0 : len(wiki_query_summary) // 4] + "........."
                 )
                 st.write("### Summarize the search results together")
                 st.write(tot_summary[0 : len(tot_summary) // 4] + ".........")
