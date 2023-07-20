@@ -203,7 +203,7 @@ def main():
             "Enter the word count of the blog", min_value=100, max_value=2000, step=100
         )
         goBtn = st.button("**Go**", key="go", use_container_width=True)
-        if (myTopic and myWordCount) or goBtn:
+        if goBtn:
             try:
                 start = time.time()
                 keyword_list = keyword_agent.run(
