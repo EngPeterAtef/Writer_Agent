@@ -7,3 +7,4 @@ wikipedia
 google-api-python-client
 duckduckgo-search
 openai
+tiktoken
