@@ -19,6 +19,13 @@ import time
 import os
 # import pyperclip
 
+def count_words_with_bullet_points(input_string):
+    bullet_points = ['*', '-', '+','.',] # define the bullet points to look for
+    words_count = 0
+    for bullet_point in bullet_points:
+        input_string = input_string.replace(bullet_point, '') # remove the bullet points
+    words_count = len(input_string.split()) # count the words
+    return words_count
 
 def main():
     load_dotenv()
@@ -149,7 +156,7 @@ def main():
             verbose=True,
         )
         # create a blog writer agent
-        prompt_writer = """You are an expert online blogger with expert writing skills and I want you to only write out the breakdown of each section of the blog on the topic of {topic} 
+        prompt_writer_outline = """You are an expert online blogger with expert writing skills and I want you to only write out the breakdown of each section of the blog on the topic of {topic} 
         using the following information:
         keywords: {keywords}.
         The title is: {title}.
@@ -163,7 +170,7 @@ def main():
         duck summary: {duck_summary}.
         wiki query summary: {wiki_query_summary}.
         The results summary is: {summary}.
-        The final blog will be {wordCount} words long, with an introduction at the beginning and a conclusion at the end of the blog.
+        The outline should be very detailed so that the number of words will be maximized, with an introduction at the beginning and a conclusion at the end of the blog.
         use the following template to write the blog:
         [TITLE]
         [SUBTITLE]
@@ -171,9 +178,17 @@ def main():
         [BODY IN DETIALED BULLET POINTS]
         [SUMMARY AND CONCLUSION]
         """
+        prompt_writer = """You are an expert online blogger with expert writing skills and I want you to only write a blog 
+        using the following
+        information: 
+        {outline}
+        and using  the following keywords: {keywords}.
+        summary of the blog: {summary}.
+        The final blog will be {wordCount} words long so try to maximize the number of words and add a lot of detials
+        """
 
-        prompt_writer_template = PromptTemplate(
-            template=prompt_writer,
+        prompt_writer_template_outline = PromptTemplate(
+            template=prompt_writer_outline,
             input_variables=[
                 "topic",
                 "title",
@@ -188,10 +203,26 @@ def main():
                 "wiki_query_summary",
                 "summary",
                 "keywords",
+            ],
+        )
+
+        prompt_writer_template = PromptTemplate(
+            template=prompt_writer,
+            input_variables=[
+                "outline",
+                "keywords",
+                "summary",
                 "wordCount",
             ],
         )
+
         writer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
+        writer_chain_outline = LLMChain(
+            llm=writer_llm,
+            prompt=prompt_writer_template_outline,
+            verbose=True,
+        )
+        # create a blog writer agent
         writer_chain = LLMChain(
             llm=writer_llm,
             prompt=prompt_writer_template,
@@ -202,7 +233,7 @@ def main():
         st.header("Enter the topic of the blog")
         myTopic = st.text_input("Write a blog about: ", key="query")
         myWordCount = st.number_input(
-            "Enter the word count of the blog", min_value=100, max_value=2000, step=100
+            "Enter the word count of the blog", min_value=100, max_value=3000, step=100
         )
         goBtn = st.button("**Go**", key="go", use_container_width=True)
         if goBtn:
@@ -222,7 +253,7 @@ def main():
                     f"Suggest a titel for a blog about {myTopic} using the following keywords {keyword_list}?",
                 )
                 subtitle = self_ask_with_search.run(
-                    f"Suggest a suitable subtitle for a blog about {myTopic} for the a blog title {title} using the following keywords {keyword_list}?",
+                    f"Suggest a suitable subtitle for a blog about {myTopic} for the a blog with a title {title} using the following keywords {keyword_list}?",
                 )
                 end = time.time()
                 st.write("### Title")
@@ -287,7 +318,7 @@ def main():
                 #     st.error(e)
                 # write the blog
                 start = time.time()
-                draft1 = writer_chain.run(
+                blog_outline = writer_chain_outline.run(
                     topic=myTopic,
                     title=title,
                     subtitle=subtitle,
@@ -301,13 +332,29 @@ def main():
                     wiki_query_summary=wiki_query_summary,
                     summary=tot_summary + tot_summary2,
                     keywords=keyword_list,
+                )
+                end = time.time()
+                st.write("### Blog Outline")
+                st.write(blog_outline)
+                # get the number of words in a string: split on whitespace and end of line characters
+                blog_outline_word_count = count_words_with_bullet_points(blog_outline)
+                st.write(f"> Blog Outline Word count: {blog_outline_word_count}")
+                st.write(
+                    f"> Generating the first Blog Outline took ({round(end - start, 2)} s)"
+                )
+                # write the blog
+                start = time.time()
+                draft1 = writer_chain.run(
+                    outline=blog_outline,
+                    keywords=keyword_list,
+                    summary=tot_summary + tot_summary2,
                     wordCount=myWordCount,
                 )
                 end = time.time()
-                st.write("### Draft 1 of the blog")
+                st.write("### Draft 1")
                 st.write(draft1)
                 # get the number of words in a string: split on whitespace and end of line characters
-                draft1_word_count = len(draft1.split())
+                draft1_word_count = count_words_with_bullet_points(draft1)
                 st.write(f"> Draft 1 word count: {draft1_word_count}")
                 st.write(
                     f"> Generating the first draft took ({round(end - start, 2)} s)"
