@@ -16,7 +16,7 @@ from langchain.chat_models import ChatOpenAI
 import streamlit as st
 import time
 import os
-import pyperclip
+# import pyperclip
 
 
 def main():
@@ -199,8 +199,11 @@ def main():
 
         st.header("Enter the topic of the blog")
         myTopic = st.text_input("Write a blog about: ", key="query")
+        myWordCount = st.number_input(
+            "Enter the word count of the blog", min_value=100, max_value=2000, step=100
+        )
         goBtn = st.button("**Go**", key="go", use_container_width=True)
-        if myTopic or goBtn:
+        if (myTopic and myWordCount) or goBtn:
             try:
                 start = time.time()
                 keyword_list = keyword_agent.run(
@@ -296,7 +299,7 @@ def main():
                     wiki_query_summary=wiki_query_summary,
                     summary=tot_summary + tot_summary2,
                     keywords=keyword_list,
-                    wordCount=3000,
+                    wordCount=myWordCount,
                 )
                 end = time.time()
                 st.write("### Draft 1 of the blog")
@@ -308,10 +311,11 @@ def main():
                     f"> Generating the first draft took ({round(end - start, 2)} s)"
                 )
                 # add copy button to copy the draft to the clipboard
-                copy_btn = st.button("Copy Draft 1 to clipboard", key="copy1")
-                if copy_btn:
-                    pyperclip.copy(draft1)
-                    st.success("Draft 1 copied to clipboard")
+                # copy_btn = st.button("Copy Draft 1 to clipboard", key="copy1")
+                # if copy_btn:
+                #     pyperclip.copy(draft1)
+                    # st.success("Draft 1 copied to clipboard")
+                st.success("Draft 1 generated successfully")
             except Exception as e:
                 st.error("Something went wrong, please try again")
                 st.error(e)
