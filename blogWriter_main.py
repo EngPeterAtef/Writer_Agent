@@ -198,7 +198,7 @@ def main():
 
         st.header("Enter the topic of the blog")
         myTopic = st.text_input("Write a blog about: ", key="query")
-        goBtn = st.button("Go", key="go", use_container_width=True)
+        goBtn = st.button("Write", key="go", use_container_width=True)
         if myTopic or goBtn:
             try:
                 start = time.time()
