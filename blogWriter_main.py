@@ -264,21 +264,21 @@ def main():
                 st.write(wiki_query_summary[0 : len(wiki_query_summary)])
                 # Summarize the search results together
                 st.write("### Summarize the search results together")
-                try:
-                    docs = text_spitter.create_documents(
-                        [google_results, wiki_results, duck_results, wiki_query_results]
-                    )
-                    tot_summary = summary_chain2.run(docs)
-                    tot_summary2 = summary_agent.run(
-                        f"can you provide me a summary about {myTopic} from each search engine separately? \ then use this information to combine all the summaries together to get a blog about {myTopic}."
-                    )
-                    st.write(tot_summary[0 : len(tot_summary) // 2] + ".........")
-                    st.write(tot_summary2[0 : len(tot_summary2) // 2] + ".........")
-                    end = time.time()
-                    st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
-                except Exception as e:
-                    st.error("Something went wrong, please try again")
-                    st.error(e)
+                # try:
+                docs = text_spitter.create_documents(
+                    [google_results, wiki_results, duck_results, wiki_query_results]
+                )
+                tot_summary = summary_chain2.run(docs)
+                tot_summary2 = summary_agent.run(
+                    f"can you provide me a summary about {myTopic} from each search engine separately? \ then use this information to combine all the summaries together to get a blog about {myTopic}."
+                )
+                st.write(tot_summary[0 : len(tot_summary) // 2] + ".........")
+                st.write(tot_summary2[0 : len(tot_summary2) // 2] + ".........")
+                end = time.time()
+                st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
+                # except Exception as e:
+                #     st.error("Something went wrong, please try again")
+                #     st.error(e)
                 # write the blog
                 start = time.time()
                 draft1 = writer_chain.run(
