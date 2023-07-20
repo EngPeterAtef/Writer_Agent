@@ -16,6 +16,7 @@ from langchain.chat_models import ChatOpenAI
 import streamlit as st
 import time
 import os
+import pyperclip
 
 
 def main():
@@ -198,7 +199,7 @@ def main():
 
         st.header("Enter the topic of the blog")
         myTopic = st.text_input("Write a blog about: ", key="query")
-        goBtn = st.button("Write", key="go", use_container_width=True)
+        goBtn = st.button("**Go**", key="go", use_container_width=True)
         if myTopic or goBtn:
             try:
                 start = time.time()
@@ -306,6 +307,11 @@ def main():
                 st.write(
                     f"> Generating the first draft took ({round(end - start, 2)} s)"
                 )
+                # add copy button to copy the draft to the clipboard
+                copy_btn = st.button("Copy Draft 1 to clipboard", key="copy1")
+                if copy_btn:
+                    pyperclip.copy(draft1)
+                    st.success("Draft 1 copied to clipboard")
             except Exception as e:
                 st.error("Something went wrong, please try again")
                 st.error(e)
