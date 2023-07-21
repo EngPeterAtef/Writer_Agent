@@ -17,15 +17,25 @@ from langchain.chat_models import ChatOpenAI
 import streamlit as st
 import time
 import os
+
 # import pyperclip
 
+
 def count_words_with_bullet_points(input_string):
-    bullet_points = ['*', '-', '+','.',] # define the bullet points to look for
+    bullet_points = [
+        "*",
+        "-",
+        "+",
+        ".",
+    ]  # define the bullet points to look for
     words_count = 0
     for bullet_point in bullet_points:
-        input_string = input_string.replace(bullet_point, '') # remove the bullet points
-    words_count = len(input_string.split()) # count the words
+        input_string = input_string.replace(
+            bullet_point, ""
+        )  # remove the bullet points
+    words_count = len(input_string.split())  # count the words
     return words_count
+
 
 def main():
     load_dotenv()
@@ -178,14 +188,20 @@ def main():
         [BODY IN DETIALED BULLET POINTS]
         [SUMMARY AND CONCLUSION]
         """
-        prompt_writer = """You are an expert online blogger with expert writing skills and I want you to only write a blog 
-        using the following
-        information: 
-        {outline}
-        and using  the following keywords: {keywords}.
-        summary of the blog: {summary}.
-        The final blog will be {wordCount} words long so try to maximize the number of words and add a lot of detials
-        """
+        # prompt_writer = """You are an expert online blogger with expert writing skills and I want you to only write a blog
+        # using the following
+        # information:
+        # {outline}
+        # and using  the following keywords: {keywords}.
+        # summary of the blog: {summary}.
+        # The final blog will be {wordCount} words long so try to maximize the number of words and add a lot of detials
+        # """
+        prompt_writer = """You are an experienced writer and author and you will write a blog in long form sentences using correct English grammar, where the quality would be suitable for an established online publisher.
+            Use the following information to write the blog: {outline}
+            You must maximize the word count of {wordCount}
+            and must include these keywords {keywords}
+            the blog must be structured like an essay.
+            the style of writing and language should be easy to read and flow when read."""
 
         prompt_writer_template_outline = PromptTemplate(
             template=prompt_writer_outline,
@@ -211,7 +227,7 @@ def main():
             input_variables=[
                 "outline",
                 "keywords",
-                "summary",
+                # "summary",
                 "wordCount",
             ],
         )
@@ -347,7 +363,7 @@ def main():
                 draft1 = writer_chain.run(
                     outline=blog_outline,
                     keywords=keyword_list,
-                    summary=tot_summary + tot_summary2,
+                    # summary=tot_summary + tot_summary2,
                     wordCount=myWordCount,
                 )
                 end = time.time()
@@ -363,12 +379,11 @@ def main():
                 # copy_btn = st.button("Copy Draft 1 to clipboard", key="copy1")
                 # if copy_btn:
                 #     pyperclip.copy(draft1)
-                    # st.success("Draft 1 copied to clipboard")
+                # st.success("Draft 1 copied to clipboard")
                 st.success("Draft 1 generated successfully")
             except Exception as e:
                 st.error("Something went wrong, please try again")
                 st.error(e)
-
 
 
 if __name__ == "__main__":
