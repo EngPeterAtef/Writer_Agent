@@ -1,4 +1,4 @@
-from langchain.agents import Tool, initialize_agent, AgentType, LLMSingleActionAgent
+from langchain.agents import Tool, initialize_agent, AgentType
 from langchain.utilities import (
     WikipediaAPIWrapper,
     GoogleSearchAPIWrapper,
@@ -100,6 +100,7 @@ def main():
             llm=llm_keywords,
             tools=keyword_extractor_tools,
             verbose=True,
+            handle_parsing_errors=True,
         )
         # title and subtitle Agent
         title_llm = OpenAI()  # temperature=0.7
@@ -112,7 +113,11 @@ def main():
         ]
 
         self_ask_with_search = initialize_agent(
-            title_tools, title_llm, agent=AgentType.SELF_ASK_WITH_SEARCH, verbose=True
+            title_tools,
+            title_llm,
+            agent=AgentType.SELF_ASK_WITH_SEARCH,
+            verbose=True,
+            handle_parsing_errors=True,
         )
 
         # summarize the results separately
@@ -123,11 +128,11 @@ def main():
             template=summary_prompt,
             input_variables=["essay"],
         )
-        summarize_llm = ChatOpenAI(
+        summarize_writer_llm = ChatOpenAI(
             temperature=0, model="gpt-3.5-turbo-16k"
         )  # or OpenAI(temperature=0)
         summary_chain = LLMChain(
-            llm=summarize_llm,
+            llm=summarize_writer_llm,
             prompt=summary_prompt_template,
         )
         # summarize the results together
@@ -137,7 +142,7 @@ def main():
             chunk_overlap=500,
         )
         summary_chain2 = load_summarize_chain(
-            llm=summarize_llm,
+            llm=summarize_writer_llm,
             chain_type="map_reduce",
         )
         # create a summary agent
@@ -165,10 +170,11 @@ def main():
         ]
         summary_agent = initialize_agent(
             summary_tools,
-            llm=summarize_llm,
+            llm=summarize_writer_llm,
             agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
             agent_name="Summary Agent",
             verbose=True,
+            handle_parsing_errors=True,
         )
         # create a blog writer agent
         prompt_writer_outline = """You are an expert online blogger with expert writing skills and I want you to only write out the breakdown of each section of the blog on the topic of {topic} 
@@ -230,21 +236,41 @@ def main():
             ],
         )
 
-        writer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
+        # writer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
         writer_chain_outline = LLMChain(
-            llm=writer_llm,
+            llm=summarize_writer_llm,
             prompt=prompt_writer_template_outline,
             verbose=True,
         )
         # create a blog writer agent
         writer_chain = LLMChain(
-            llm=writer_llm,
+            llm=summarize_writer_llm,
             prompt=prompt_writer_template,
             verbose=True,
         )
-        planner = load_chat_planner(writer_llm, system_prompt=prompt_writer)
-        executor = load_agent_executor(writer_llm, summary_tools, verbose=True)
-        writer_agent = PlanAndExecute(planner=planner, executor=executor, verbose=True)
+
+        # evaluation agent
+        evaluation_llm = ChatOpenAI(temperature=0.5, model="gpt-3.5-turbo-16k")
+
+        evaluation_prompt = """You are an expert blogs editor and you will evaluate the first the draft of the blog
+        in terms of the following criteria:
+        1- The blog must be relevant to {topic}.
+        2- The blog must contain the following keywords: {keywords}.
+        3- The blog must contain the following title: {title}.
+        4- The blog must contain the following subtitle: {subtitle}.
+        5- The blog must contain at least {wordCount} words.
+
+        Edit the first draft using the given tools to satisfy the above criteria.
+        The draft is:
+        {draft1}
+        The answer is the second draft which is the edited version of the first draft.
+        """
+
+        planner = load_chat_planner(evaluation_llm, system_prompt=evaluation_prompt)
+        executor = load_agent_executor(evaluation_llm, summary_tools, verbose=True)
+        evaluation_agent = PlanAndExecute(
+            planner=planner, executor=executor, verbose=True
+        )
 
         # take the topic from the user
 
@@ -379,33 +405,37 @@ def main():
                     f"> Generating the first draft took ({round(end - start, 2)} s)"
                 )
 
-                # start = time.time()
-                # draft1 = writer_agent(
-                #     inputs=[
-                #         {"topic": myTopic},
-                #         {"outline": blog_outline},
-                #         {"keywords": keyword_list},
-                #         # "summary", tot_summary + tot_summary2,
-                #         {
-                #             "wordCount": myWordCount,
-                #         },
-                #     ]
-                # )
-                # end = time.time()
-                # st.write("### Draft 1 V2")
-                # st.write(draft1)
-                # # get the number of words in a string: split on whitespace and end of line characters
-                # draft1_word_count = count_words_with_bullet_points(draft1)
-                # st.write(f"> Draft 1 V2 word count: {draft1_word_count}")
-                # st.write(
-                #     f"> Generating the first draft V2 took ({round(end - start, 2)} s)"
-                # )
+                st.success("Draft 1 generated successfully")
+                # evaluation agent
+                start = time.time()
+                draft2 = evaluation_agent(
+                    inputs=[
+                        {
+                            {"topic": myTopic},
+                            {"keywords": keyword_list},
+                            {"title": title},
+                            {"subtitle": subtitle},
+                            {"wordCount": myWordCount},
+                            {"draft1": draft1},
+                        },
+                        blog_outline,
+                    ],
+                    include_run_info=True,
+                )
+                end = time.time()
+                print(draft2)
+                st.write("### Draft 1 Edited")
+                st.write(draft2["output"])
+                # get the number of words in a string: split on whitespace and end of line characters
+                draft2_word_count = count_words_with_bullet_points(draft2)
+                st.write(f"> Draft 1 Edited word count: {draft2_word_count}")
+                st.write(f"> Editing the first draft took ({round(end - start, 2)} s)")
+                st.success("Draft 1 Edited successfully")
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy Draft 1 to clipboard", key="copy1")
                 # if copy_btn:
                 #     pyperclip.copy(draft1)
                 # st.success("Draft 1 copied to clipboard")
-                st.success("Draft 1 generated successfully")
             except Exception as e:
                 st.error("Something went wrong, please try again")
                 st.error(e)
