@@ -1,4 +1,4 @@
-from langchain.agents import Tool, initialize_agent, AgentType
+from langchain.agents import Tool, initialize_agent, AgentType, LLMSingleActionAgent
 from langchain.utilities import (
     WikipediaAPIWrapper,
     GoogleSearchAPIWrapper,
@@ -17,6 +17,11 @@ from langchain.chat_models import ChatOpenAI
 import streamlit as st
 import time
 import os
+from langchain.experimental.plan_and_execute import (
+    PlanAndExecute,
+    load_agent_executor,
+    load_chat_planner,
+)
 
 # import pyperclip
 
@@ -140,21 +145,21 @@ def main():
             Tool(
                 name="Wikipedia",
                 func=wiki.run,
-                description="Search engine useful when you want to get information from Wikipedia about single topic.",
+                description="Use it when you want to find an article, essay , or a blog about specific topic",
             ),
             Tool(
                 name="Intermediate Answer",
                 func=WikipediaQueryRun(api_wrapper=wiki).run,
-                description="Search engine useful for when you need to ask with search",
+                description="Use it when you want to search about specific topic inside an article, essay , or a blog.",
             ),
             Tool(
                 name="Google Search",
-                description="Search engine useful when you want to get information from Google about single topic.",
+                description="Search engine useful when you want to get information from Google about single topic in general.",
                 func=google.run,
             ),
             Tool(
                 name="DuckDuckGo Search",
-                description="Search engine useful when you want to get information from DuckDuckGo about single topic.",
+                description="Search engine useful when you want to get information from DuckDuckGo about single topic in general.",
                 func=duck.run,
             ),
         ]
@@ -188,20 +193,12 @@ def main():
         [BODY IN DETIALED BULLET POINTS]
         [SUMMARY AND CONCLUSION]
         """
-        # prompt_writer = """You are an expert online blogger with expert writing skills and I want you to only write a blog
-        # using the following
-        # information:
-        # {outline}
-        # and using  the following keywords: {keywords}.
-        # summary of the blog: {summary}.
-        # The final blog will be {wordCount} words long so try to maximize the number of words and add a lot of detials
-        # """
         prompt_writer = """You are an experienced writer and author and you will write a blog in long form sentences using correct English grammar, where the quality would be suitable for an established online publisher.
-            Use the following information to write the blog: {outline}
-            You must maximize the word count of {wordCount}
-            and must include these keywords {keywords}
-            the blog must be structured like an essay.
-            the style of writing and language should be easy to read and flow when read."""
+            First, Search about the best way to write a blog about {topic}. 
+            Second, use the following outline to write the blog: {outline} because the blog must contain this information. Don't use the same structure of the outline, try to use different words and sentences to make the blog more interesting.
+            Third, Count the number of words in the blog because the number of words must be maximized to be {wordCount} and if the number of words is less than {wordCount}, then add more words to the blog.
+            Fourth, Check if the blog contains these keywords {keywords} and if not, add them to the blog.
+            """
 
         prompt_writer_template_outline = PromptTemplate(
             template=prompt_writer_outline,
@@ -225,6 +222,7 @@ def main():
         prompt_writer_template = PromptTemplate(
             template=prompt_writer,
             input_variables=[
+                "topic",
                 "outline",
                 "keywords",
                 # "summary",
@@ -244,6 +242,10 @@ def main():
             prompt=prompt_writer_template,
             verbose=True,
         )
+        planner = load_chat_planner(writer_llm, system_prompt=prompt_writer)
+        executor = load_agent_executor(writer_llm, summary_tools, verbose=True)
+        writer_agent = PlanAndExecute(planner=planner, executor=executor, verbose=True)
+
         # take the topic from the user
 
         st.header("Enter the topic of the blog")
@@ -361,6 +363,7 @@ def main():
                 # write the blog
                 start = time.time()
                 draft1 = writer_chain.run(
+                    topic=myTopic,
                     outline=blog_outline,
                     keywords=keyword_list,
                     # summary=tot_summary + tot_summary2,
@@ -375,6 +378,28 @@ def main():
                 st.write(
                     f"> Generating the first draft took ({round(end - start, 2)} s)"
                 )
+
+                # start = time.time()
+                # draft1 = writer_agent(
+                #     inputs=[
+                #         {"topic": myTopic},
+                #         {"outline": blog_outline},
+                #         {"keywords": keyword_list},
+                #         # "summary", tot_summary + tot_summary2,
+                #         {
+                #             "wordCount": myWordCount,
+                #         },
+                #     ]
+                # )
+                # end = time.time()
+                # st.write("### Draft 1 V2")
+                # st.write(draft1)
+                # # get the number of words in a string: split on whitespace and end of line characters
+                # draft1_word_count = count_words_with_bullet_points(draft1)
+                # st.write(f"> Draft 1 V2 word count: {draft1_word_count}")
+                # st.write(
+                #     f"> Generating the first draft V2 took ({round(end - start, 2)} s)"
+                # )
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy Draft 1 to clipboard", key="copy1")
                 # if copy_btn:
