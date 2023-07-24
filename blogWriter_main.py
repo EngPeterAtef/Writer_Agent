@@ -411,12 +411,12 @@ def main():
                 draft2 = evaluation_agent(
                     inputs=[
                         {
-                            {"topic": myTopic},
-                            {"keywords": keyword_list},
-                            {"title": title},
-                            {"subtitle": subtitle},
-                            {"wordCount": myWordCount},
-                            {"draft1": draft1},
+                            "topic": myTopic,
+                            "keywords": keyword_list,
+                            "title": title,
+                            "subtitle": subtitle,
+                            "wordCount": myWordCount,
+                            "draft1": draft1,
                         },
                         blog_outline,
                     ],

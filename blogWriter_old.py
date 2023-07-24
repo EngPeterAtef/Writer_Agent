@@ -121,7 +121,7 @@ def main():
             try:
                 agent = PlanAndExecute(planner=planner, executor=executor, verbose=True)
                 out = agent(
-                    inputs=["task", query],
+                    inputs=[query, "task"],
                 )
             except Exception as e:
                 st.error("Error: Please try again", icon="⚠")
