@@ -8,7 +8,7 @@ from langchain import OpenAI
 from dotenv import load_dotenv
 
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from langchain.chains import LLMChain, SequentialChain
 from langchain.chains.summarize import load_summarize_chain
 from langchain.text_splitter import (
     RecursiveCharacterTextSplitter,
@@ -128,11 +128,11 @@ def main():
             template=summary_prompt,
             input_variables=["essay"],
         )
-        summarize_writer_llm = ChatOpenAI(
+        summarize_llm = ChatOpenAI(
             temperature=0, model="gpt-3.5-turbo-16k"
         )  # or OpenAI(temperature=0)
         summary_chain = LLMChain(
-            llm=summarize_writer_llm,
+            llm=summarize_llm,
             prompt=summary_prompt_template,
         )
         # summarize the results together
@@ -142,7 +142,7 @@ def main():
             chunk_overlap=500,
         )
         summary_chain2 = load_summarize_chain(
-            llm=summarize_writer_llm,
+            llm=summarize_llm,
             chain_type="map_reduce",
         )
         # create a summary agent
@@ -170,7 +170,7 @@ def main():
         ]
         summary_agent = initialize_agent(
             summary_tools,
-            llm=summarize_writer_llm,
+            llm=summarize_llm,
             agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
             agent_name="Summary Agent",
             verbose=True,
@@ -200,10 +200,14 @@ def main():
         [SUMMARY AND CONCLUSION]
         """
         prompt_writer = """You are an experienced writer and author and you will write a blog in long form sentences using correct English grammar, where the quality would be suitable for an established online publisher.
-            First, Search about the best way to write a blog about {topic}. 
-            Second, use the following outline to write the blog: {outline} because the blog must contain this information. Don't use the same structure of the outline, try to use different words and sentences to make the blog more interesting.
-            Third, Count the number of words in the blog because the number of words must be maximized to be {wordCount} and if the number of words is less than {wordCount}, then add more words to the blog.
-            Fourth, Check if the blog contains these keywords {keywords} and if not, add them to the blog.
+            First, Search about the best way to write a blog about {topic}. THE BLOG MUST BE RELEVANT TO THE TOPIC.
+            Second, use the following outline to write the blog: {outline} because the blog must contain this information. 
+            Don't use the same structure of the outline. 
+            Remove any bullet points and numbering systems so that the flow of the blog will be smooth.
+            The blog should be structured implicitly, with an introduction at the beginning and a conclusion at the end of the blog without using the words introduction, body and conclusion.
+            Try to use different words and sentences to make the blog more interesting.
+            Third, Check if the blog contains these keywords {keywords} and if not, add them to the blog.
+            Fourth, Count the number of words in the blog because the number of words must be maximized to be {wordCount} and if the number of words is less than {wordCount}, then add more words to the blog.
             """
 
         prompt_writer_template_outline = PromptTemplate(
@@ -236,41 +240,77 @@ def main():
             ],
         )
 
-        # writer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
+        # outline agent
+        writer_llm = ChatOpenAI(temperature=0.7, model="gpt-3.5-turbo-16k")
+        # writer_llm = OpenAI(temperature=0.7, model='text-davinci-003')
         writer_chain_outline = LLMChain(
-            llm=summarize_writer_llm,
+            llm=writer_llm,
             prompt=prompt_writer_template_outline,
             verbose=True,
         )
         # create a blog writer agent
         writer_chain = LLMChain(
-            llm=summarize_writer_llm,
+            llm=writer_llm,
             prompt=prompt_writer_template,
+            output_key="draft",
             verbose=True,
         )
 
         # evaluation agent
-        evaluation_llm = ChatOpenAI(temperature=0.5, model="gpt-3.5-turbo-16k")
+        evaluation_llm = ChatOpenAI(temperature=0.3, model="gpt-3.5-turbo-16k")
 
-        evaluation_prompt = """You are an expert blogs editor and you will evaluate the first the draft of the blog
-        in terms of the following criteria:
+        evaluation_prompt = """You are an expert blogs editor and you will edit the draft to satisfy the following criteria:
         1- The blog must be relevant to {topic}.
         2- The blog must contain the following keywords: {keywords}.
-        3- The blog must contain the following title: {title}.
-        4- The blog must contain the following subtitle: {subtitle}.
-        5- The blog must contain at least {wordCount} words.
-
-        Edit the first draft using the given tools to satisfy the above criteria.
-        The draft is:
-        {draft1}
-        The answer is the second draft which is the edited version of the first draft.
+        3- The blog must contain at least {wordCount} words so use the summary {summary} to add more words to the blog.
+        [DRAFT]
+        {draft}
+        The Result should be:
+        1- All the mistakes according to the above criteria listed in bullet points:
+        [MISTAKES]
+        2- The edited draft of the blog:
+        [EDITED DRAFT]
         """
+        # evaluation_prompt = """You are an online blog editor. Given the draft of a blog, 
+        # it is your job to edit this draft in terms of the following criteria:
+        # 1- Relevance to the blog title and subtitle.
+        # 2- Relevance to the blog topic.
+        # 3- Relevance to the blog keywords.
+        # 4- The number of words in the blog must be as desired.
 
-        planner = load_chat_planner(evaluation_llm, system_prompt=evaluation_prompt)
-        executor = load_agent_executor(evaluation_llm, summary_tools, verbose=True)
-        evaluation_agent = PlanAndExecute(
-            planner=planner, executor=executor, verbose=True
+        # Blog Draft:
+        # {draft}
+        # Edit this draft to satisfy the above criteria."""
+        evaluation_prompt_template = PromptTemplate(
+            template=evaluation_prompt,
+            input_variables=[
+                "topic",
+                "keywords",
+                "wordCount",
+                "summary",
+                "draft",
+            ],
         )
+
+        evaluation_chain = LLMChain(
+            llm=evaluation_llm,
+            prompt=evaluation_prompt_template,
+            # output_key="blog",
+            verbose=True,
+        )
+
+        # writer_evaluation_chain = SequentialChain(
+        #     chains=[writer_chain, evaluation_chain],
+        #     input_variables=[
+        #         "topic",
+        #         "outline",
+        #         "keywords",
+        #         "summary",
+        #         "wordCount",
+        #     ],
+        #     output_variables=["draft", "blog"],
+        #     verbose=True,
+        # )
 
         # take the topic from the user
 
@@ -345,7 +385,7 @@ def main():
                 st.write(wiki_query_summary[0 : len(wiki_query_summary)])
                 # Summarize the search results together
                 st.write("### Summarize the search results together")
-                # try:
+
                 docs = text_spitter.create_documents(
                     [google_results, wiki_results, duck_results, wiki_query_results]
                 )
@@ -357,10 +397,8 @@ def main():
                 st.write(tot_summary2[0 : len(tot_summary2) // 2] + ".........")
                 end = time.time()
                 st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
-                # except Exception as e:
-                #     st.error("Something went wrong, please try again")
-                #     st.error(e)
-                # write the blog
+
+                # write the blog outline
                 start = time.time()
                 blog_outline = writer_chain_outline.run(
                     topic=myTopic,
@@ -406,31 +444,43 @@ def main():
                 )
 
                 st.success("Draft 1 generated successfully")
+                #########################################
                 # evaluation agent
+                # drafts = writer_evaluation_chain(
+                #     {
+                #         "topic": myTopic,
+                #         "outline": blog_outline,
+                #         "keywords": keyword_list,
+                #         # "summary": tot_summary + tot_summary2,
+                #         "wordCount": myWordCount,
+                #     }
+                # )
+                # st.write("### Draft 1 V2")
+                # st.write(drafts["draft"])
+                # # get the number of words in a string: split on whitespace and end of line characters
+                # draft1_word_count = count_words_with_bullet_points(drafts["draft"])
+                # st.write(f"> Draft 1 word count: {draft1_word_count}")
+                
+                # st.write("### Draft 2")
+                # st.write(drafts["blog"])
+                #######################################
+                # edit the first draft
+                st.write("### Draft 2")
                 start = time.time()
-                draft2 = evaluation_agent(
-                    inputs=[
-                        {
-                            "topic": myTopic,
-                            "keywords": keyword_list,
-                            "title": title,
-                            "subtitle": subtitle,
-                            "wordCount": myWordCount,
-                            "draft1": draft1,
-                        },
-                        blog_outline,
-                    ],
-                    include_run_info=True,
+                draft2 = evaluation_chain.run(
+                    topic=myTopic,
+                    keywords=keyword_list,
+                    wordCount=myWordCount,
+                    summary=tot_summary + tot_summary2,
+                    draft=draft1,
                 )
                 end = time.time()
-                print(draft2)
-                st.write("### Draft 1 Edited")
-                st.write(draft2["output"])
+                st.write(draft2)
                 # get the number of words in a string: split on whitespace and end of line characters
                 draft2_word_count = count_words_with_bullet_points(draft2)
-                st.write(f"> Draft 1 Edited word count: {draft2_word_count}")
+                st.write(f"> Draft 2 word count: {draft2_word_count}")
                 st.write(f"> Editing the first draft took ({round(end - start, 2)} s)")
-                st.success("Draft 1 Edited successfully")
+                st.success("Draft 2 generated successfully")
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy Draft 1 to clipboard", key="copy1")
                 # if copy_btn:
