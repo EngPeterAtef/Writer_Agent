@@ -215,7 +215,7 @@ def main():
             duck summary: {duck_summary}.
             The results summary is: {summary}.
             Second, Count the number of words in the blog because the number of words must be maximized to be {wordCount} and if the number of words is less than {wordCount}, then add more words to the blog.
-            Third, Each paragraph in the blog should be refered to the web page that most relevant to it: {webpages}.
+            Third, After each paragraph in the blog, refer to the web page that most relevant to it: {webpages}.
             """
 
         # prompt_writer_template_outline = PromptTemplate(
@@ -275,7 +275,7 @@ def main():
         1- The blog must be relevant to {topic}.
         2- The blog must contain the following keywords: {keywords}.
         3- The blog must contain at least {wordCount} words so use the summary {summary} create an interesting senternces.
-        4- Each part of the blog must be referenced to the correct reference in the following web pages: {webpages}.
+        4- After each paragraph in the blog, refer to the web page that most relevant to it: {webpages}.
         [DRAFT]
         {draft}
         The Result should be:
@@ -399,8 +399,8 @@ def main():
                 tot_summary2 = summary_agent.run(
                     f"can you provide me a summary about {myTopic} from each search engine separately? \ then use this information to combine all the summaries together to get a blog about {myTopic}."
                 )
-                st.write(tot_summary[0 : len(tot_summary) // 2] + ".........")
-                st.write(tot_summary2[0 : len(tot_summary2) // 2] + ".........")
+                st.write(tot_summary)
+                st.write(tot_summary2)
                 end = time.time()
                 st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
 
