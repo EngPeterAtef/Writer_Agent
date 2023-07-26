@@ -148,14 +148,9 @@ def main():
         # create a summary agent
         summary_tools = [
             Tool(
-                name="Wikipedia",
-                func=wiki.run,
-                description="Use it when you want to find an article, essay , or a blog about specific topic",
-            ),
-            Tool(
                 name="Intermediate Answer",
-                func=WikipediaQueryRun(api_wrapper=wiki).run,
-                description="Use it when you want to search about specific topic inside an article, essay , or a blog.",
+                func=wikiQuery.run,
+                description="Use it when you want to get article summary from Wikipedia about specific topic",
             ),
             Tool(
                 name="Google Search",
@@ -185,11 +180,8 @@ def main():
         google results: {google_results}.
         wiki results: {wiki_results}.
         duck results: {duck_results}.
-        wiki query results: {wiki_query_results}.
         google summary: {google_summary}.
-        wiki summary: {wiki_summary}.
         duck summary: {duck_summary}.
-        wiki query summary: {wiki_query_summary}.
         The results summary is: {summary}.
         The outline should be very detailed so that the number of words will be maximized, with an introduction at the beginning and a conclusion at the end of the blog.
         use the following template to write the blog:
@@ -199,19 +191,51 @@ def main():
         [BODY IN DETIALED BULLET POINTS]
         [SUMMARY AND CONCLUSION]
         """
+        # prompt_writer = """You are an experienced writer and author and you will write a blog in long form sentences using correct English grammar, where the quality would be suitable for an established online publisher.
+        #     First, Search about the best way to write a blog about {topic}. THE BLOG MUST BE RELEVANT TO THE TOPIC.
+        #     Second, use the following outline to write the blog: {outline} because the blog must contain this information.
+        #     Don't use the same structure of the outline.
+        #     Remove any bullet points and numbering systems so that the flow of the blog will be smooth.
+        #     The blog should be structured implicitly, with an introduction at the beginning and a conclusion at the end of the blog without using the words introduction, body and conclusion.
+        #     Try to use different words and sentences to make the blog more interesting.
+        #     Third, Check if the blog contains these keywords {keywords} and if not, add them to the blog.
+        #     Fourth, Count the number of words in the blog because the number of words must be maximized to be {wordCount} and if the number of words is less than {wordCount}, then add more words to the blog.
+        #     """
+
         prompt_writer = """You are an experienced writer and author and you will write a blog in long form sentences using correct English grammar, where the quality would be suitable for an established online publisher.
-            First, Search about the best way to write a blog about {topic}. THE BLOG MUST BE RELEVANT TO THE TOPIC.
-            Second, use the following outline to write the blog: {outline} because the blog must contain this information. 
-            Don't use the same structure of the outline. 
-            Remove any bullet points and numbering systems so that the flow of the blog will be smooth.
-            The blog should be structured implicitly, with an introduction at the beginning and a conclusion at the end of the blog without using the words introduction, body and conclusion.
-            Try to use different words and sentences to make the blog more interesting.
-            Third, Check if the blog contains these keywords {keywords} and if not, add them to the blog.
-            Fourth, Count the number of words in the blog because the number of words must be maximized to be {wordCount} and if the number of words is less than {wordCount}, then add more words to the blog.
+            using the following information:
+            Blog Topic: {topic}. THE BLOG MUST BE RELEVANT TO THE TOPIC.
+            keywords: {keywords}.
+            The title is: {title}.
+            The subtitle is: {subtitle}.
+            google results: {google_results}.
+            wiki results: {wiki_results}.
+            duck results: {duck_results}.
+            google summary: {google_summary}.
+            duck summary: {duck_summary}.
+            The results summary is: {summary}.
+            Second, Count the number of words in the blog because the number of words must be maximized to be {wordCount} and if the number of words is less than {wordCount}, then add more words to the blog.
+            Third, Each paragraph in the blog should be refered to the web page that most relevant to it: {webpages}.
             """
 
-        prompt_writer_template_outline = PromptTemplate(
-            template=prompt_writer_outline,
+        # prompt_writer_template_outline = PromptTemplate(
+        #     template=prompt_writer_outline,
+        #     input_variables=[
+        #         "topic",
+        #         "title",
+        #         "subtitle",
+        #         "google_results",
+        #         "wiki_results",
+        #         "duck_results",
+        #         "google_summary",
+        #         "duck_summary",
+        #         "summary",
+        #         "keywords",
+        #     ],
+        # )
+
+        prompt_writer_template = PromptTemplate(
+            template=prompt_writer,
             input_variables=[
                 "topic",
                 "title",
@@ -219,35 +243,23 @@ def main():
                 "google_results",
                 "wiki_results",
                 "duck_results",
-                "wiki_query_results",
                 "google_summary",
-                "wiki_summary",
                 "duck_summary",
-                "wiki_query_summary",
                 "summary",
                 "keywords",
-            ],
-        )
-
-        prompt_writer_template = PromptTemplate(
-            template=prompt_writer,
-            input_variables=[
-                "topic",
-                "outline",
-                "keywords",
-                # "summary",
                 "wordCount",
+                "webpages",
             ],
         )
 
         # outline agent
         writer_llm = ChatOpenAI(temperature=0.7, model="gpt-3.5-turbo-16k")
         # writer_llm = OpenAI(temperature=0.7, model='text-davinci-003')
-        writer_chain_outline = LLMChain(
-            llm=writer_llm,
-            prompt=prompt_writer_template_outline,
-            verbose=True,
-        )
+        # writer_chain_outline = LLMChain(
+        #     llm=writer_llm,
+        #     prompt=prompt_writer_template_outline,
+        #     verbose=True,
+        # )
         # create a blog writer agent
         writer_chain = LLMChain(
             llm=writer_llm,
@@ -262,7 +274,8 @@ def main():
         evaluation_prompt = """You are an expert blogs editor and you will edit the draft to satisfy the following criteria:
         1- The blog must be relevant to {topic}.
         2- The blog must contain the following keywords: {keywords}.
-        3- The blog must contain at least {wordCount} words so use the summary {summary} to add more words to the blog.
+        3- The blog must contain at least {wordCount} words so use the summary {summary} create an interesting senternces.
+        4- Each part of the blog must be referenced to the correct reference in the following web pages: {webpages}.
         [DRAFT]
         {draft}
         The Result should be:
@@ -271,7 +284,7 @@ def main():
         2- The edited draft of the blog:
         [EDITED DRAFT]
         """
-        # evaluation_prompt = """You are an online blog editor. Given the draft of a blog, 
+        # evaluation_prompt = """You are an online blog editor. Given the draft of a blog,
         # it is your job to edit this draft in terms of the following criteria:
         # 1- Relevance to the blog title and subtitle.
         # 2- Relevance to the blog topic.
@@ -289,6 +302,7 @@ def main():
                 "wordCount",
                 "summary",
                 "draft",
+                "webpages",
             ],
         )
 
@@ -351,19 +365,19 @@ def main():
                 st.write("### Search Results")
                 start = time.time()
                 google_results = google.run(myTopic)
-                wiki_results = wiki.run(myTopic)
-                duck_results = duck.run(myTopic)
-                wiki_query_results = wikiQuery.run(myTopic)
+                google_webpages = google.results(myTopic, 10)
                 st.write("#### Google Search Results")
                 st.write(google_results[0 : len(google_results) // 4] + ".........")
-                st.write("#### Wikipedia Search Results")
-                st.write(wiki_results[0 : len(wiki_results) // 4] + ".........")
+                duck_results = duck.run(myTopic)
                 st.write("#### DuckDuckGo Search Results")
                 st.write(duck_results[0 : len(duck_results) // 4] + ".........")
-                st.write("#### Wikipedia Query Search Results")
-                st.write(
-                    wiki_query_results[0 : len(wiki_query_results) // 4] + "........."
-                )
+                wiki_query_results = wikiQuery.run(myTopic)
+                st.write("#### Wikipedia Search Results")
+                st.write(wiki_query_results)
+                st.write("#### References")
+                for i in range(len(google_webpages)):
+                    st.write(f"**{i+1}. {google_webpages[i]['title']}**: [link]({google_webpages[i]['link']}/ 'link')")
+                    st.write(f"{google_webpages[i]['snippet']}")
                 end = time.time()
                 st.write(
                     f"> Generating the search results took ({round(end - start, 2)} s)"
@@ -374,21 +388,13 @@ def main():
                 google_summary = summary_chain.run(essay=google_results)
                 st.write("#### Google Search Results Summary")
                 st.write(google_summary[0 : len(google_summary)])
-                wiki_summary = summary_chain.run(essay=wiki_results)
-                st.write("#### Wikipedia Search Results Summary")
-                st.write(wiki_summary[0 : len(wiki_summary)])
                 duck_summary = summary_chain.run(essay=duck_results)
                 st.write("#### DuckDuckGo Search Results Summary")
                 st.write(duck_summary[0 : len(duck_summary)])
-                wiki_query_summary = summary_chain.run(essay=wiki_query_results)
-                st.write("#### Wikipedia Query Search Results Summary")
-                st.write(wiki_query_summary[0 : len(wiki_query_summary)])
                 # Summarize the search results together
                 st.write("### Summarize the search results together")
 
-                docs = text_spitter.create_documents(
-                    [google_results, wiki_results, duck_results, wiki_query_results]
-                )
+                docs = text_spitter.create_documents([google_results, duck_results])
                 tot_summary = summary_chain2.run(docs)
                 tot_summary2 = summary_agent.run(
                     f"can you provide me a summary about {myTopic} from each search engine separately? \ then use this information to combine all the summaries together to get a blog about {myTopic}."
@@ -399,39 +405,43 @@ def main():
                 st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
 
                 # write the blog outline
-                start = time.time()
-                blog_outline = writer_chain_outline.run(
-                    topic=myTopic,
-                    title=title,
-                    subtitle=subtitle,
-                    google_results=google_results,
-                    wiki_results=wiki_results,
-                    duck_results=duck_results,
-                    wiki_query_results=wiki_query_results,
-                    google_summary=google_summary,
-                    wiki_summary=wiki_summary,
-                    duck_summary=duck_summary,
-                    wiki_query_summary=wiki_query_summary,
-                    summary=tot_summary + tot_summary2,
-                    keywords=keyword_list,
-                )
-                end = time.time()
-                st.write("### Blog Outline")
-                st.write(blog_outline)
-                # get the number of words in a string: split on whitespace and end of line characters
-                blog_outline_word_count = count_words_with_bullet_points(blog_outline)
-                st.write(f"> Blog Outline Word count: {blog_outline_word_count}")
-                st.write(
-                    f"> Generating the first Blog Outline took ({round(end - start, 2)} s)"
-                )
+                # start = time.time()
+                # blog_outline = writer_chain_outline.run(
+                #     topic=myTopic,
+                #     title=title,
+                #     subtitle=subtitle,
+                #     google_results=google_results,
+                #     wiki_results=wiki_query_results,
+                #     duck_results=duck_results,
+                #     google_summary=google_summary,
+                #     duck_summary=duck_summary,
+                #     summary=tot_summary + tot_summary2,
+                #     keywords=keyword_list,
+                # )
+                # end = time.time()
+                # st.write("### Blog Outline")
+                # st.write(blog_outline)
+                # # get the number of words in a string: split on whitespace and end of line characters
+                # blog_outline_word_count = count_words_with_bullet_points(blog_outline)
+                # st.write(f"> Blog Outline Word count: {blog_outline_word_count}")
+                # st.write(
+                #     f"> Generating the first Blog Outline took ({round(end - start, 2)} s)"
+                # )
                 # write the blog
                 start = time.time()
                 draft1 = writer_chain.run(
                     topic=myTopic,
-                    outline=blog_outline,
+                    title=title,
+                    subtitle=subtitle,
+                    google_results=google_results,
+                    wiki_results=wiki_query_results,
+                    duck_results=duck_results,
+                    google_summary=google_summary,
+                    duck_summary=duck_summary,
+                    summary=tot_summary + tot_summary2,
                     keywords=keyword_list,
-                    # summary=tot_summary + tot_summary2,
                     wordCount=myWordCount,
+                    webpages=google_webpages,
                 )
                 end = time.time()
                 st.write("### Draft 1")
@@ -460,7 +470,7 @@ def main():
                 # # get the number of words in a string: split on whitespace and end of line characters
                 # draft1_word_count = count_words_with_bullet_points(drafts["draft"])
                 # st.write(f"> Draft 1 word count: {draft1_word_count}")
-                
+
                 # st.write("### Draft 2")
                 # st.write(drafts["blog"])
                 #######################################
@@ -473,6 +483,7 @@ def main():
                     wordCount=myWordCount,
                     summary=tot_summary + tot_summary2,
                     draft=draft1,
+                    webpages=google_webpages,
                 )
                 end = time.time()
                 st.write(draft2)
