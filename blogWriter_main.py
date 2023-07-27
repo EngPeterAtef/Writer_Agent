@@ -475,7 +475,7 @@ def main():
                 start = time.time()
 
                 draft1_reference = reference_agent.run(
-                    f"First, Search for each paragraph {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
+                    f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
                 )
                 end = time.time()
                 st.write(draft1_reference)
