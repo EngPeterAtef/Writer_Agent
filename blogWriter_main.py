@@ -17,11 +17,12 @@ from langchain.chat_models import ChatOpenAI
 import streamlit as st
 import time
 import os
-from langchain.experimental.plan_and_execute import (
-    PlanAndExecute,
-    load_agent_executor,
-    load_chat_planner,
-)
+from langchain.document_loaders import UnstructuredURLLoader
+import pickle
+from langchain.vectorstores import FAISS
+from langchain.embeddings import OpenAIEmbeddings
+import faiss
+from langchain.chains import RetrievalQAWithSourcesChain
 
 # import pyperclip
 
@@ -136,7 +137,7 @@ def main():
             prompt=summary_prompt_template,
         )
         # summarize the results together
-        text_spitter = RecursiveCharacterTextSplitter(
+        text_splitter = RecursiveCharacterTextSplitter(
             separators=[".", "\n", "\t", "\r", "\f", "\v", "\0", "\x0b", "\x0c"],
             chunk_size=1000,
             chunk_overlap=500,
@@ -278,7 +279,7 @@ def main():
         reference_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
         reference_agent = initialize_agent(
             reference_tools,
-            llm=reference_llm,#OpenAI(temperature=0),
+            llm=reference_llm,  # OpenAI(temperature=0),
             agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
             agent_name="Reference Agent",
             description="Agent required to get the web pages that are most relevant to the blog.",
@@ -348,7 +349,9 @@ def main():
         # )
 
         # take the topic from the user
-
+        embeddings = OpenAIEmbeddings()
+        with open("faiss_store_openai.pkl", "rb") as f:
+            vectorStore_openAI = pickle.load(f)
         st.header("Enter the topic of the blog")
         myTopic = st.text_input("Write a blog about: ", key="query")
         myWordCount = st.number_input(
@@ -386,7 +389,10 @@ def main():
                 st.write("### Search Results")
                 start = time.time()
                 google_results = google.run(myTopic)
-                google_webpages = google.results(myTopic, 10)
+                google_webpages1 = google.results(
+                    f"site:https://en.wikipedia.org {myTopic}", 5
+                )
+                google_webpages2 = google.results(myTopic, 10)
                 st.write("#### Google Search Results")
                 st.write(google_results[0 : len(google_results) // 2] + ".........")
                 duck_results = duck.run(myTopic)
@@ -396,12 +402,17 @@ def main():
                 st.write("#### Wikipedia Search Results")
                 st.write(wiki_query_results[0 : len(wiki_query_results) // 2])
                 st.write("#### References")
-                for i in range(len(google_webpages)):
-                    st.write(
-                        f"**{i+1}. [{google_webpages[i]['title']}]({google_webpages[i]['link']}/ '{google_webpages[i]['link']}')**"
-                    )
-                    st.write(f"{google_webpages[i]['snippet']}")
                 end = time.time()
+                for i in range(len(google_webpages1)):
+                    st.write(
+                        f"**{i+1}. [{google_webpages1[i]['title']}]({google_webpages1[i]['link']}/ '{google_webpages1[i]['link']}')**"
+                    )
+                    st.write(f"{google_webpages1[i]['snippet']}")
+                for i in range(len(google_webpages2)):
+                    st.write(
+                        f"**{i+1}. [{google_webpages2[i]['title']}]({google_webpages2[i]['link']}/ '{google_webpages2[i]['link']}')**"
+                    )
+                    st.write(f"{google_webpages2[i]['snippet']}")
                 st.write(
                     f"> Generating the search results took ({round(end - start, 2)} s)"
                 )
@@ -417,8 +428,10 @@ def main():
                 # Summarize the search results together
                 st.write("### Summarize the search results together")
 
-                docs = text_spitter.create_documents([google_results, duck_results])
-                tot_summary = summary_chain2.run(docs)
+                results_docs = text_splitter.create_documents(
+                    [google_results, duck_results]
+                )
+                tot_summary = summary_chain2.run(results_docs)
                 tot_summary2 = summary_agent.run(
                     f"can you provide me a summary about {myTopic} from each search engine separately? \ then use this information to combine all the summaries together to get a blog about {myTopic}."
                 )
@@ -426,7 +439,27 @@ def main():
                 st.write(tot_summary2)
                 end = time.time()
                 st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
+                links = []
+                for i in range(len(google_webpages1)):
+                    links.append(google_webpages1[i]["link"])
 
+                for i in range(len(google_webpages2)):
+                    links.append(google_webpages2[i]["link"])
+
+                loaders = UnstructuredURLLoader(urls=links)
+                data = loaders.load()
+                data_docs = text_splitter.split_documents(documents=data)
+                vectorStore_openAI = FAISS.from_documents(
+                    data_docs, embedding=embeddings
+                )
+
+                with open("faiss_store_openai.pkl", "wb") as f:
+                    pickle.dump(vectorStore_openAI, f)
+
+                chain = RetrievalQAWithSourcesChain.from_llm(
+                    writer_outline_llm,
+                    retriever=vectorStore_openAI.as_retriever(),
+                )
                 # write the blog outline
                 st.write("### Blog Outline")
                 start = time.time()
@@ -441,7 +474,7 @@ def main():
                     duck_summary=duck_summary,
                     summary=tot_summary + tot_summary2,
                     keywords=keyword_list,
-                    websites=google_webpages,
+                    websites=google_webpages1 + google_webpages2,
                 )
                 end = time.time()
                 st.write(blog_outline)
