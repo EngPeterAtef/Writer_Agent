@@ -9,3 +9,5 @@ duckduckgo-search
 openai
 tiktoken
 pyperclip
+pdf2image
+pytesseract

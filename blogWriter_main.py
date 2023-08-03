@@ -97,7 +97,7 @@ def main():
         keyword_agent = initialize_agent(
             agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
             agent_name="Keyword extractor",
-            agent_description="You are a helpful AI that helps the user to get the important keyword list from the search results about specific topic.",
+            agent_description="You are a helpful AI that helps the user to get the important keyword list in bullet points from the search results about specific topic.",
             llm=llm_keywords,
             tools=keyword_extractor_tools,
             verbose=True,
@@ -138,7 +138,18 @@ def main():
         )
         # summarize the results together
         text_splitter = RecursiveCharacterTextSplitter(
-            separators=[".", "\n", "\t", "\r", "\f", "\v", "\0", "\x0b", "\x0c"],
+            separators=[
+                ".",
+                "\n",
+                "\t",
+                "\r",
+                "\f",
+                "\v",
+                "\0",
+                "\x0b",
+                "\x0c",
+                "\n\n",
+            ],
             chunk_size=1000,
             chunk_overlap=500,
         )
@@ -184,19 +195,37 @@ def main():
         google summary: {google_summary}.
         duck summary: {duck_summary}.
         The results summary is: {summary}.
-        Websites: {websites} will be used as references so at the end of each paragraph, you should add a reference to the website using the webstie number in []. 
-        The outline should be very detailed so that the number of words will be maximized so use all the previous information, with an introduction at the beginning and a conclusion at the end of the blog.
         use the following template to write the blog:
         [TITLE]
         [SUBTITLE]
         [introduction]
         [BODY IN DETIALED BULLET POINTS]
         [SUMMARY AND CONCLUSION]
-        [REFERENCES]
         """
+        # prompt_writer_outline = """You are an expert online blogger with expert writing skills and I want you to only write out the breakdown of each section of the blog on the topic of {topic}
+        # using the following information:
+        # keywords: {keywords}.
+        # The title is: {title}.
+        # The subtitle is: {subtitle}.
+        # google results: {google_results}.
+        # wiki results: {wiki_results}.
+        # duck results: {duck_results}.
+        # google summary: {google_summary}.
+        # duck summary: {duck_summary}.
+        # The results summary is: {summary}.
+        # Websites: {websites} will be used as references so at the end of each paragraph, you should add a reference to the website using the webstie number in [].
+        # The outline should be very detailed so that the number of words will be maximized so use all the previous information, with an introduction at the beginning and a conclusion at the end of the blog.
+        # use the following template to write the blog:
+        # [TITLE]
+        # [SUBTITLE]
+        # [introduction]
+        # [BODY IN DETIALED BULLET POINTS]
+        # [SUMMARY AND CONCLUSION]
+        # [REFERENCES]
+        # """
         prompt_writer = """You are an experienced writer and author and you will write a blog in long form sentences using correct English grammar, where the quality would be suitable for an established online publisher.
             First, Search about the best way to write a blog about {topic}. THE BLOG MUST BE RELEVANT TO THE TOPIC.
-            Second, use the following outline to write the blog: {outline} because the blog must contain this information.
+            Second, use the following outline to write the blog: {outline} because the blog must write about the bullet points inside it and contain this information.
             Don't use the same structure of the outline.
             Remove any bullet points and numbering systems so that the flow of the blog will be smooth.
             The blog should be structured implicitly, with an introduction at the beginning and a conclusion at the end of the blog without using the words introduction, body and conclusion.
@@ -204,21 +233,6 @@ def main():
             Third, Check if the blog contains these keywords {keywords} and if not, add them to the blog.
             Fourth, Count the number of words in the blog because the number of words must be maximized to be {wordCount} and add more words to the blog to reach that number of words.
             """
-
-        # prompt_writer = """You are an experienced writer and author and you will write a blog in long form sentences using correct English grammar, where the quality would be suitable for an established online publisher.
-        #     using the following information:
-        #     Blog Topic: {topic}. THE BLOG MUST BE RELEVANT TO THE TOPIC.
-        #     keywords: {keywords}.
-        #     The title is: {title}.
-        #     The subtitle is: {subtitle}.
-        #     google results: {google_results}.
-        #     wiki results: {wiki_results}.
-        #     duck results: {duck_results}.
-        #     google summary: {google_summary}.
-        #     duck summary: {duck_summary}.
-        #     The results summary is: {summary}.
-        #     Second, Count the number of words in the blog because the number of words must be maximized to be {wordCount} and if the number of words is less than {wordCount}, then add more words to the blog.
-        #     """
 
         prompt_writer_template_outline = PromptTemplate(
             template=prompt_writer_outline,
@@ -233,7 +247,6 @@ def main():
                 "duck_summary",
                 "summary",
                 "keywords",
-                "websites",
             ],
         )
 
@@ -248,14 +261,17 @@ def main():
         )
 
         # outline agent
-        writer_outline_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
+        writer_outline_llm = ChatOpenAI(
+            temperature=0,
+            model="gpt-3.5-turbo-16k",
+        )
         writer_chain_outline = LLMChain(
             llm=writer_outline_llm,
             prompt=prompt_writer_template_outline,
             verbose=True,
         )
         # create a blog writer agent
-        writer_llm = ChatOpenAI(temperature=0.5, model="gpt-3.5-turbo-16k")
+        writer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
         writer_chain = LLMChain(
             llm=writer_llm,
             prompt=prompt_writer_template,
@@ -268,24 +284,24 @@ def main():
             return results
 
         # reference agent
-        reference_tools = [
-            Tool(
-                name="Google Search Results",
-                description="Search engine useful to get the most relevant web pages about single topic in general.",
-                func=google_search_results,
-            ),
-        ]
+        # reference_tools = [
+        #     Tool(
+        #         name="Google Search Results",
+        #         description="Search engine useful to get the most relevant web pages about single topic in general.",
+        #         func=google_search_results,
+        #     ),
+        # ]
 
         reference_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
-        reference_agent = initialize_agent(
-            reference_tools,
-            llm=reference_llm,  # OpenAI(temperature=0),
-            agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-            agent_name="Reference Agent",
-            description="Agent required to get the web pages that are most relevant to the blog.",
-            verbose=True,
-            handle_parsing_errors=True,
-        )
+        # reference_agent = initialize_agent(
+        #     reference_tools,
+        #     llm=reference_llm,  # OpenAI(temperature=0),
+        #     agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        #     agent_name="Reference Agent",
+        #     description="Agent required to get the web pages that are most relevant to the blog.",
+        #     verbose=True,
+        #     handle_parsing_errors=True,
+        # )
 
         # evaluation agent
         evaluation_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
@@ -294,9 +310,10 @@ def main():
         1- The blog must be relevant to {topic}.
         2- The blog must contain the following keywords: {keywords}.
         3- The blog must contain at least {wordCount} words so use the summary {summary} to add an interesting senternces to the blog.
-        4- After each paragraph in the blog, refer to the web page that most relevant to it using the web page number in [].
+        4- Websites will be used as references so at the end of each paragraph, you should add a reference to the website using the webstie number in []. 
+        So, after each paragraph in the blog, refer to the web page index that most relevant to it using the web page number in [].
         The used web pages should be listed at the end of the blog.
-        [Web Pages]
+        [Websites]
         {webpages} 
         [DRAFT]
         {draft}
@@ -352,6 +369,7 @@ def main():
         embeddings = OpenAIEmbeddings()
         with open("faiss_store_openai.pkl", "rb") as f:
             vectorStore_openAI = pickle.load(f)
+
         st.header("Enter the topic of the blog")
         myTopic = st.text_input("Write a blog about: ", key="query")
         myWordCount = st.number_input(
@@ -410,7 +428,7 @@ def main():
                     st.write(f"{google_webpages1[i]['snippet']}")
                 for i in range(len(google_webpages2)):
                     st.write(
-                        f"**{i+1}. [{google_webpages2[i]['title']}]({google_webpages2[i]['link']}/ '{google_webpages2[i]['link']}')**"
+                        f"**{i+6}. [{google_webpages2[i]['title']}]({google_webpages2[i]['link']}/ '{google_webpages2[i]['link']}')**"
                     )
                     st.write(f"{google_webpages2[i]['snippet']}")
                 st.write(
@@ -446,20 +464,6 @@ def main():
                 for i in range(len(google_webpages2)):
                     links.append(google_webpages2[i]["link"])
 
-                loaders = UnstructuredURLLoader(urls=links)
-                data = loaders.load()
-                data_docs = text_splitter.split_documents(documents=data)
-                vectorStore_openAI = FAISS.from_documents(
-                    data_docs, embedding=embeddings
-                )
-
-                with open("faiss_store_openai.pkl", "wb") as f:
-                    pickle.dump(vectorStore_openAI, f)
-
-                chain = RetrievalQAWithSourcesChain.from_llm(
-                    writer_outline_llm,
-                    retriever=vectorStore_openAI.as_retriever(),
-                )
                 # write the blog outline
                 st.write("### Blog Outline")
                 start = time.time()
@@ -474,7 +478,7 @@ def main():
                     duck_summary=duck_summary,
                     summary=tot_summary + tot_summary2,
                     keywords=keyword_list,
-                    websites=google_webpages1 + google_webpages2,
+                    # websites=google_webpages1 + google_webpages2,
                 )
                 end = time.time()
                 st.write(blog_outline)
@@ -506,12 +510,39 @@ def main():
                 # reference the blog
                 st.write("### Draft 1 References")
                 start = time.time()
+                loaders = UnstructuredURLLoader(urls=links)
+                print("Loading data...")
+                data = loaders.load()
+                print("Data loaded.")
+                data_docs = text_splitter.split_documents(documents=data)
+                print("Documents split.")
+                vectorStore_openAI = FAISS.from_documents(
+                    data_docs, embedding=embeddings
+                )
+                print("Vector store created.")
+                with open("faiss_store_openai.pkl", "wb") as f:
+                    pickle.dump(vectorStore_openAI, f)
 
-                draft1_reference = reference_agent.run(
-                    f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
+                print("Vector store saved.")
+
+                chain = RetrievalQAWithSourcesChain.from_llm(
+                    reference_llm,
+                    retriever=vectorStore_openAI.as_retriever(),
+                )
+                print("Chain created.")
+
+                draft1_reference = chain(
+                    {
+                        "question": f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
+                    },
+                    include_run_info=True,
                 )
                 end = time.time()
-                st.write(draft1_reference)
+                # draft1_reference = reference_agent.run(
+                #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
+                # )
+                # st.write(draft1_reference['answer'])
+                st.write(draft1_reference["sources"])
                 st.write(
                     f"> Generating the first draft reference took ({round(end - start, 2)} s)"
                 )
@@ -543,8 +574,10 @@ def main():
                     keywords=keyword_list,
                     wordCount=myWordCount,
                     summary=tot_summary + tot_summary2,
-                    draft=draft1,  # +'\n\n' + draft1_reference,
-                    webpages=draft1_reference,
+                    draft=draft1,
+                    webpages=google_webpages1 + google_webpages2
+                    if (draft1_reference["sources"] == "No specific sources found.")
+                    else draft1_reference["sources"],
                 )
                 end = time.time()
                 st.write(draft2)
@@ -553,6 +586,58 @@ def main():
                 st.write(f"> Draft 2 word count: {draft2_word_count}")
                 st.write(f"> Editing the first draft took ({round(end - start, 2)} s)")
                 st.success("Draft 2 generated successfully")
+                #########################################
+                # draft2 reference
+                st.write("### Draft 2 References")
+                start = time.time()
+                draft2_reference = chain(
+                    {
+                        "question": f"First, Search for each paragraph in the following text {draft2} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
+                    },
+                    include_run_info=True,
+                )
+                end = time.time()
+
+                st.write(draft2_reference["sources"])
+                st.write(
+                    f"> Generating the second draft reference took ({round(end - start, 2)} s)"
+                )
+                #########################################
+                # edit the second draft
+                # write the blog
+                st.write("### Blog")
+                start = time.time()
+                blog = chain(
+                    {
+                        "question": f"""You are an expert blogs editor and you will edit the draft to satisfy the following criteria:
+        1- The blog must be relevant to {myTopic}.
+        2- The blog must contain the following keywords: {keyword_list}.
+        3- The blog must contain at least {myWordCount} words so use the summary {tot_summary+ tot_summary2} to add an interesting senternces to the blog.
+        4- Websites will be used as references so at the end of each paragraph, you should add a reference to the website using the webstie number in []. 
+        So, after each paragraph in the blog, refer to the web page index that most relevant to it using the web page number in [].
+        The used web pages should be listed at the end of the blog.
+        [Websites]
+        {draft2_reference} 
+        [DRAFT]
+        {draft2}
+        The Result should be:
+        1- All the mistakes according to the above criteria listed in bullet points:
+        [MISTAKES]
+        2- The edited draft of the blog:
+        [EDITED DRAFT]
+        """
+                    },
+                    include_run_info=True,
+                )
+                end = time.time()
+                st.write(blog["answer"])
+                st.write(blog["sources"])
+
+                # get the number of words in a string: split on whitespace and end of line characters
+                blog_word_count = count_words_with_bullet_points(blog["answer"])
+                st.write(f"> Blog word count: {blog_word_count}")
+                st.write(f"> Generating the blog took ({round(end - start, 2)} s)")
+                st.success("Blog generated successfully")
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy Draft 1 to clipboard", key="copy1")
                 # if copy_btn:

@@ -1,40 +1,68 @@
-from langchain.retrievers.web_research import WebResearchRetriever
-import os
-from langchain.vectorstores import Chroma
+# Load Notion page as a markdownfile file
+from langchain.document_loaders import NotionDirectoryLoader
+from langchain.text_splitter import MarkdownHeaderTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+path = "./Notion_DB/"
+loader = NotionDirectoryLoader(path)
+docs = loader.load()
+print(docs)
+md_file = docs[0].page_content
+
+# Let's create groups based on the section headers in our page
+
+headers_to_split_on = [
+    ("###", "Section"),
+]
+markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+md_header_splits = markdown_splitter.split_text(md_file)
+
+
+# Define our text splitter
+
+chunk_size = 500
+chunk_overlap = 0
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=chunk_size, chunk_overlap=chunk_overlap
+)
+all_splits = text_splitter.split_documents(md_header_splits)
+
+# loop over splits and print them out
+for split in all_splits:
+    print(split)
+    print("\n")
+
+# Build vectorstore and keep the metadata
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.chat_models.openai import ChatOpenAI
-from langchain.utilities import GoogleSearchAPIWrapper
-from dotenv import load_dotenv
-from langchain.chains import RetrievalQAWithSourcesChain
+from langchain.vectorstores import Chroma
 
-load_dotenv()
-# OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-# Vectorstore
-vectorstore = Chroma(
-    embedding_function=OpenAIEmbeddings(),
-    persist_directory="./chroma_db_oai",
+vectorstore = Chroma.from_documents(documents=all_splits, embedding=OpenAIEmbeddings())
+
+# Create retriever
+from langchain.llms import OpenAI
+from langchain.retrievers.self_query.base import SelfQueryRetriever
+from langchain.chains.query_constructor.base import AttributeInfo
+
+# Define our metadata
+metadata_field_info = [
+    AttributeInfo(
+        name="Section",
+        description="Part of the document that the text comes from",
+        type="string or list[string]",
+    ),
+]
+document_content_description = "Major sections of the document"
+
+# Define self query retriver
+llm = OpenAI(temperature=0)
+retriever = SelfQueryRetriever.from_llm(
+    llm, vectorstore, document_content_description, metadata_field_info, verbose=True
 )
 
-# LLM
-llm = ChatOpenAI(temperature=0)
+# Test
+ans = retriever.get_relevant_documents("Summarize the Introduction section of the document")  
 
-# Search
-search = GoogleSearchAPIWrapper()
-
-# Initialize
-web_research_retriever = WebResearchRetriever.from_llm(
-    vectorstore=vectorstore,
-    llm=llm,
-    search=search,
-)
-
-
-try:
-    user_input = "How do LLM Powered Autonomous Agents work?"
-    qa_chain = RetrievalQAWithSourcesChain.from_chain_type(
-        llm, retriever=web_research_retriever
-    )
-    result = qa_chain({"question": user_input})
-    print(result)
-except Exception as e:
-    print(e)
+# Print results
+for doc in ans:
+    print(doc)
+    print("\n")
