@@ -149,9 +149,10 @@ def main():
                 "\x0b",
                 "\x0c",
                 "\n\n",
+                "\n\n\n",
             ],
             chunk_size=1000,
-            chunk_overlap=500,
+            chunk_overlap=200,
         )
         summary_chain2 = load_summarize_chain(
             llm=summarize_llm,
@@ -541,7 +542,7 @@ def main():
                 # draft1_reference = reference_agent.run(
                 #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
                 # )
-                # st.write(draft1_reference['answer'])
+                st.write(draft1_reference["answer"])
                 st.write(draft1_reference["sources"])
                 st.write(
                     f"> Generating the first draft reference took ({round(end - start, 2)} s)"
@@ -575,9 +576,9 @@ def main():
                     wordCount=myWordCount,
                     summary=tot_summary + tot_summary2,
                     draft=draft1,
-                    webpages=google_webpages1 + google_webpages2
-                    if (draft1_reference["sources"] == "No specific sources found.")
-                    else draft1_reference["sources"],
+                    webpages=draft1_reference["sources"]
+                    + draft1_reference["answer"]
+                    + str(google_webpages2),
                 )
                 end = time.time()
                 st.write(draft2)
@@ -598,6 +599,7 @@ def main():
                 # )
                 # end = time.time()
 
+                # st.write(draft2_reference["answer"])
                 # st.write(draft2_reference["sources"])
                 # st.write(
                 #     f"> Generating the second draft reference took ({round(end - start, 2)} s)"
@@ -605,39 +607,25 @@ def main():
                 #########################################
                 # edit the second draft
                 # write the blog
-        #         st.write("### Blog")
-        #         start = time.time()
-        #         blog = chain(
-        #             {
-        #                 "question": f"""You are an expert blogs editor and you will edit the draft to satisfy the following criteria:
-        # 1- The blog must be relevant to {myTopic}.
-        # 2- The blog must contain the following keywords: {keyword_list}.
-        # 3- The blog must contain at least {myWordCount} words so use the summary {tot_summary+ tot_summary2} to add an interesting senternces to the blog.
-        # 4- Websites will be used as references so at the end of each paragraph, you should add a reference to the website using the webstie number in []. 
-        # So, after each paragraph in the blog, refer to the web page index that most relevant to it using the web page number in [].
-        # The used web pages should be listed at the end of the blog.
-        # [Websites]
-        # {draft2_reference} 
-        # [DRAFT]
-        # {draft2}
-        # The Result should be:
-        # 1- All the mistakes according to the above criteria listed in bullet points:
-        # [MISTAKES]
-        # 2- The edited draft of the blog:
-        # [EDITED DRAFT]
-        # """
-        #             },
-        #             include_run_info=True,
-        #         )
-        #         end = time.time()
-        #         st.write(blog["answer"])
-        #         st.write(blog["sources"])
-
-        #         # get the number of words in a string: split on whitespace and end of line characters
-        #         blog_word_count = count_words_with_bullet_points(blog["answer"])
-        #         st.write(f"> Blog word count: {blog_word_count}")
-        #         st.write(f"> Generating the blog took ({round(end - start, 2)} s)")
-        #         st.success("Blog generated successfully")
+                st.write("### Blog")
+                start = time.time()
+                blog = evaluation_chain.run(
+                    topic=myTopic,
+                    keywords=keyword_list,
+                    wordCount=myWordCount,
+                    summary=tot_summary + tot_summary2,
+                    draft=draft2,
+                    webpages=draft1_reference["sources"]
+                    + draft1_reference["answer"]
+                    + str(google_webpages2),
+                )
+                end = time.time()
+                st.write(blog)
+                # get the number of words in a string: split on whitespace and end of line characters
+                blog_word_count = count_words_with_bullet_points(blog)
+                st.write(f"> Blog word count: {blog_word_count}")
+                st.write(f"> Generating the blog took ({round(end - start, 2)} s)")
+                st.success("Blog generated successfully")
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy Draft 1 to clipboard", key="copy1")
                 # if copy_btn:
