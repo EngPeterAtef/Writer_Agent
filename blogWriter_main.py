@@ -24,7 +24,7 @@ from langchain.embeddings import OpenAIEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 
-# import pyperclip
+import pyperclip
 
 
 def count_words_with_bullet_points(input_string):
@@ -627,10 +627,10 @@ def main():
                 st.write(f"> Generating the blog took ({round(end - start, 2)} s)")
                 st.success("Blog generated successfully")
                 # add copy button to copy the draft to the clipboard
-                # copy_btn = st.button("Copy Draft 1 to clipboard", key="copy1")
-                # if copy_btn:
-                #     pyperclip.copy(draft1)
-                # st.success("Draft 1 copied to clipboard")
+                copy_btn = st.button("Copy the blog to clipboard", key="copy1")
+                if copy_btn:
+                    pyperclip.copy(draft1)
+                st.success("The blog copied to clipboard")
             except Exception as e:
                 st.error("Something went wrong, please try again")
                 st.error(e)
