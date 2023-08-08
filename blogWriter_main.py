@@ -44,7 +44,8 @@ def count_words_with_bullet_points(input_string):
 
 
 def main():
-    load_dotenv()
+    if not load_dotenv():
+        return
     keys_flag = False
 
     st.set_page_config(
@@ -77,7 +78,8 @@ def main():
         # search engines
         wiki = WikipediaAPIWrapper()
         wikiQuery = WikipediaQueryRun(api_wrapper=wiki)
-        google = GoogleSearchAPIWrapper(google_api_key='AIzaSyCVXzdKkyHIcqNDS48Xt2TutqjPSI0AFg8',google_cse_id='64f3cee527f1b49de')
+        google = GoogleSearchAPIWrapper()
+        # google = GoogleSearchAPIWrapper(google_api_key='AIzaSyCVXzdKkyHIcqNDS48Xt2TutqjPSI0AFg8',google_cse_id='64f3cee527f1b49de')
         duck = DuckDuckGoSearchRun()
 
         # Keyphrase extraction Agent
