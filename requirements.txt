@@ -11,3 +11,4 @@ tiktoken
 pyperclip
 pdf2image
 pytesseract
+faiss-cpu
