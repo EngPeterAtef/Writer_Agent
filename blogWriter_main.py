@@ -44,11 +44,7 @@ def count_words_with_bullet_points(input_string):
 
 
 def main():
-    # if not load_dotenv():
-    #     print("Error loading .env file")
-    #     return
-    # else:
-    #     print("Loading .env file")
+    load_dotenv()
     keys_flag = False
 
     st.set_page_config(
@@ -80,14 +76,12 @@ def main():
     if keys_flag:
         OPENAI_API_KEY = "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"
         os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+        os.environ["GOOGLE_API_KEY"] = "AIzaSyCVXzdKkyHIcqNDS48Xt2TutqjPSI0AFg8"
+        os.environ["GOOGLE_CSE_ID"] = "64f3cee527f1b49de"
         # search engines
         wiki = WikipediaAPIWrapper()
         wikiQuery = WikipediaQueryRun(api_wrapper=wiki)
-        # google = GoogleSearchAPIWrapper()
-        google = GoogleSearchAPIWrapper(
-            google_api_key="AIzaSyCVXzdKkyHIcqNDS48Xt2TutqjPSI0AFg8",
-            google_cse_id="64f3cee527f1b49de",
-        )
+        google = GoogleSearchAPIWrapper()
         duck = DuckDuckGoSearchRun()
 
         # Keyphrase extraction Agent
