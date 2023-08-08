@@ -45,6 +45,7 @@ def count_words_with_bullet_points(input_string):
 
 def main():
     if not load_dotenv():
+        print("Error loading .env file")
         return
     keys_flag = False
 
