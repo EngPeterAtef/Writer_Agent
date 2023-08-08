@@ -47,6 +47,8 @@ def main():
     if not load_dotenv():
         print("Error loading .env file")
         return
+    else:
+        print("Loading .env file")
     keys_flag = False
 
     st.set_page_config(
