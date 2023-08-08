@@ -79,6 +79,7 @@ def main():
     keys_flag = True
     if keys_flag:
         OPENAI_API_KEY = "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"
+        os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
         # search engines
         wiki = WikipediaAPIWrapper()
         wikiQuery = WikipediaQueryRun(api_wrapper=wiki)
