@@ -1,3 +1,4 @@
+from langchain.docstore.document import Document
 from langchain.agents import Tool, initialize_agent, AgentType
 from langchain.utilities import (
     WikipediaAPIWrapper,
@@ -24,7 +25,8 @@ from langchain.embeddings import OpenAIEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 
-import pyperclip
+# import pyperclip
+from PyPDF2 import PdfReader
 
 
 def count_words_with_bullet_points(input_string):
@@ -47,10 +49,8 @@ def main():
     load_dotenv()
     keys_flag = False
 
-    st.set_page_config(
-        page_title="Blog Writer Agent", page_icon=":message:", layout="wide"
-    )
-    st.title("Blog Writer Agent: Write a blog about any topic")
+    st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
+    st.title("Blog Writer Agent: Write a blog about any topic 💬")
     # with st.sidebar:
     #     st.subheader("Enter the required keys")
 
@@ -76,8 +76,8 @@ def main():
     if keys_flag:
         OPENAI_API_KEY = "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"
         os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-        os.environ["GOOGLE_API_KEY"] = "AIzaSyCVXzdKkyHIcqNDS48Xt2TutqjPSI0AFg8"
-        os.environ["GOOGLE_CSE_ID"] = "64f3cee527f1b49de"
+        os.environ["GOOGLE_API_KEY"] = "AIzaSyAoqW-8TgiLNFYUEwZZ692kxFXRaqKnXTI"
+        os.environ["GOOGLE_CSE_ID"] = "024c21082dfaf4f23"
         # search engines
         wiki = WikipediaAPIWrapper()
         wikiQuery = WikipediaQueryRun(api_wrapper=wiki)
@@ -185,7 +185,7 @@ def main():
             llm=summarize_llm,
             agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
             agent_name="Summary Agent",
-            verbose=True,
+            # verbose=True,
             handle_parsing_errors=True,
         )
         # create a blog writer agent
@@ -194,6 +194,7 @@ def main():
         keywords: {keywords}.
         The title is: {title}.
         The subtitle is: {subtitle}.
+        uploaded documents: {documents}.
         google results: {google_results}.
         wiki results: {wiki_results}.
         duck results: {duck_results}.
@@ -235,6 +236,11 @@ def main():
             Remove any bullet points and numbering systems so that the flow of the blog will be smooth.
             The blog should be structured implicitly, with an introduction at the beginning and a conclusion at the end of the blog without using the words introduction, body and conclusion.
             Try to use different words and sentences to make the blog more interesting.
+            The source of your information is the following:
+            a) The uploaded documents: {documents}.
+            b) The google results: {google_results}.
+            c) The wiki results: {wiki_results}.
+            d) The duck results: {duck_results}.
             Third, Check if the blog contains these keywords {keywords} and if not, add them to the blog.
             Fourth, Count the number of words in the blog because the number of words must be maximized to be {wordCount} and add more words to the blog to reach that number of words.
             """
@@ -245,6 +251,7 @@ def main():
                 "topic",
                 "title",
                 "subtitle",
+                "documents",
                 "google_results",
                 "wiki_results",
                 "duck_results",
@@ -260,6 +267,10 @@ def main():
             input_variables=[
                 "topic",
                 "outline",
+                "documents",
+                "google_results",
+                "wiki_results",
+                "duck_results",
                 "keywords",
                 "wordCount",
             ],
@@ -273,7 +284,7 @@ def main():
         writer_chain_outline = LLMChain(
             llm=writer_outline_llm,
             prompt=prompt_writer_template_outline,
-            verbose=True,
+            # verbose=True,
         )
         # create a blog writer agent
         writer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
@@ -281,12 +292,12 @@ def main():
             llm=writer_llm,
             prompt=prompt_writer_template,
             # output_key="draft",
-            verbose=True,
+            # verbose=True,
         )
 
-        def google_search_results(topic):
-            results = google.results(query=myTopic, num_results=10)
-            return results
+        # def google_search_results(topic):
+        #     results = google.results(query=myTopic, num_results=10)
+        #     return results
 
         # reference agent
         # reference_tools = [
@@ -315,11 +326,11 @@ def main():
         1- The blog must be relevant to {topic}.
         2- The blog must contain the following keywords: {keywords}.
         3- The blog must contain at least {wordCount} words so use the summary {summary} to add an interesting senternces to the blog.
-        4- Websites will be used as references so at the end of each paragraph, you should add a reference to the website using the webstie number in []. 
+        4- Sources will be used as references so at the end of each paragraph, you should add a reference to the website using the source number in []. 
         So, after each paragraph in the blog, refer to the web page index that most relevant to it using the web page number in [].
         The used web pages should be listed at the end of the blog.
-        [Websites]
-        {webpages} 
+        [Sources]
+        {sources} 
         [DRAFT]
         {draft}
         The Result should be:
@@ -346,7 +357,7 @@ def main():
                 "wordCount",
                 "summary",
                 "draft",
-                "webpages",
+                "sources",
             ],
         )
 
@@ -376,11 +387,46 @@ def main():
         #     vectorStore_openAI = pickle.load(f)
 
         st.header("Enter the topic of the blog")
+
         myTopic = st.text_input("Write a blog about: ", key="query")
+        # upload documents feature
+        uploaded_docs = []
+        # with st.sidebar:
+        # st.subheader("Upload PDF documents")
+        uploaded_files = st.file_uploader(
+            "Upload PDF documents",
+            accept_multiple_files=True,
+            type="pdf",
+        )
+        if st.button("Process Documents", use_container_width=True) and uploaded_files:
+            with st.spinner("Processing your documents..."):
+                for file in uploaded_files:
+                    pdf_reader = PdfReader(file)
+                    text = ""
+                    for page in pdf_reader.pages:
+                        text += page.extract_text()
+                    uploaded_docs.append(
+                        Document(
+                            page_content=text,
+                            metadata={
+                                "source": file.name,
+                                "number_of_pages": len(pdf_reader.pages),
+                            },
+                        )
+                    )
+            # save uploaded_docs in the session state
+            st.session_state.uploaded_docs = text_splitter.split_documents(
+                documents=uploaded_docs
+            )
+            st.success(
+                "Documents processed successfully. Now you can use the documents in the blog"
+            )
         myWordCount = st.number_input(
             "Enter the word count of the blog", min_value=100, max_value=3000, step=100
         )
+
         goBtn = st.button("**Go**", key="go", use_container_width=True)
+
         if goBtn:
             try:
                 start = time.time()
@@ -413,7 +459,7 @@ def main():
                 start = time.time()
                 google_results = google.run(myTopic)
                 google_webpages1 = google.results(
-                    f"site:https://en.wikipedia.org {myTopic}", 5
+                    f"site:https://en.wikipedia.org {myTopic}", 3
                 )
                 google_webpages2 = google.results(myTopic, 10)
                 st.write("#### Google Search Results")
@@ -472,10 +518,31 @@ def main():
                 # write the blog outline
                 st.write("### Blog Outline")
                 start = time.time()
+
+                loaders = UnstructuredURLLoader(urls=links)
+                print("Loading data...")
+                data = loaders.load()
+                print("Data loaded.")
+                data_docs = text_splitter.split_documents(documents=data)
+                print("Documents split.")
+                uploaded_docs = st.session_state["uploaded_docs"]
+                print("uploaded documents: ", len(uploaded_docs))
+                print("websites documents: ", len(data_docs))
+                vectorStore_openAI = FAISS.from_documents(
+                    data_docs + uploaded_docs, embedding=embeddings
+                )
+                print("Vector store created.")
+
+                # with open("faiss_store_openai.pkl", "wb") as f:
+                #     pickle.dump(vectorStore_openAI, f)
+
+                # print("Vector store saved.")
+
                 blog_outline = writer_chain_outline.run(
                     topic=myTopic,
                     title=title,
                     subtitle=subtitle,
+                    documents=uploaded_docs,
                     google_results=google_results,
                     wiki_results=wiki_query_results,
                     duck_results=duck_results,
@@ -499,6 +566,10 @@ def main():
                 draft1 = writer_chain.run(
                     topic=myTopic,
                     outline=blog_outline,
+                    documents=uploaded_docs,
+                    google_results=google_results,
+                    wiki_results=wiki_query_results,
+                    duck_results=duck_results,
                     keywords=keyword_list,
                     wordCount=myWordCount,
                 )
@@ -515,21 +586,6 @@ def main():
                 # reference the blog
                 st.write("### Draft 1 References")
                 start = time.time()
-                loaders = UnstructuredURLLoader(urls=links)
-                print("Loading data...")
-                data = loaders.load()
-                print("Data loaded.")
-                data_docs = text_splitter.split_documents(documents=data)
-                print("Documents split.")
-                vectorStore_openAI = FAISS.from_documents(
-                    data_docs, embedding=embeddings
-                )
-                print("Vector store created.")
-
-                # with open("faiss_store_openai.pkl", "wb") as f:
-                #     pickle.dump(vectorStore_openAI, f)
-
-                print("Vector store saved.")
 
                 chain = RetrievalQAWithSourcesChain.from_llm(
                     reference_llm,
@@ -539,7 +595,7 @@ def main():
 
                 draft1_reference = chain(
                     {
-                        "question": f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
+                        "question": f"First, Search for each paragraph in the following text {draft1} to get the most relevant source. \ Then, list those sources and order with respect to the order of using them in the blog. The sources could be links or documents"
                     },
                     include_run_info=True,
                 )
@@ -579,11 +635,12 @@ def main():
                     topic=myTopic,
                     keywords=keyword_list,
                     wordCount=myWordCount,
-                    summary=tot_summary + tot_summary2,
+                    summary=tot_summary + tot_summary2 + uploaded_docs,
                     draft=draft1,
-                    webpages=draft1_reference["sources"]
+                    sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
-                    + str(google_webpages2),
+                    + str(google_webpages2)
+                    + str([doc.metadata["source"] for doc in uploaded_docs]),
                 )
                 end = time.time()
                 st.write(draft2)
@@ -618,11 +675,12 @@ def main():
                     topic=myTopic,
                     keywords=keyword_list,
                     wordCount=myWordCount,
-                    summary=tot_summary + tot_summary2,
+                    summary=tot_summary + tot_summary2 + uploaded_docs,
                     draft=draft2,
                     webpages=draft1_reference["sources"]
                     + draft1_reference["answer"]
-                    + str(google_webpages2),
+                    + str(google_webpages2)
+                    + str([doc.metadata["source"] for doc in uploaded_docs]),
                 )
                 end = time.time()
                 st.write(blog)
@@ -635,7 +693,7 @@ def main():
                 # copy_btn = st.button("Copy the blog to clipboard", key="copy1")
                 # if copy_btn:
                 #     pyperclip.copy(draft1)
-                st.success("The blog copied to clipboard")
+                # st.success("The blog copied to clipboard")
             except Exception as e:
                 st.error("Something went wrong, please try again")
                 st.error(e)

@@ -13,3 +13,4 @@ pyperclip
 pdf2image
 pytesseract
 unstructured
+PyPDF2
