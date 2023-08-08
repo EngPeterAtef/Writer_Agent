@@ -327,8 +327,8 @@ def main():
         2- The blog must contain the following keywords: {keywords}.
         3- The blog must contain at least {wordCount} words so use the summary {summary} to add an interesting senternces to the blog.
         4- Sources will be used as references so at the end of each paragraph, you should add a reference to the website using the source number in []. 
-        So, after each paragraph in the blog, refer to the web page index that most relevant to it using the web page number in [].
-        The used web pages should be listed at the end of the blog.
+        So, after each paragraph in the blog, refer to the source index that most relevant to it using the source number in [].
+        The used sources should be listed at the end of the blog.
         [Sources]
         {sources} 
         [DRAFT]
