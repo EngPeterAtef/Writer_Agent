@@ -368,8 +368,8 @@ def main():
 
         # take the topic from the user
         embeddings = OpenAIEmbeddings()
-        with open("faiss_store_openai.pkl", "rb") as f:
-            vectorStore_openAI = pickle.load(f)
+        # with open("faiss_store_openai.pkl", "rb") as f:
+        #     vectorStore_openAI = pickle.load(f)
 
         st.header("Enter the topic of the blog")
         myTopic = st.text_input("Write a blog about: ", key="query")
@@ -521,8 +521,9 @@ def main():
                     data_docs, embedding=embeddings
                 )
                 print("Vector store created.")
-                with open("faiss_store_openai.pkl", "wb") as f:
-                    pickle.dump(vectorStore_openAI, f)
+
+                # with open("faiss_store_openai.pkl", "wb") as f:
+                #     pickle.dump(vectorStore_openAI, f)
 
                 print("Vector store saved.")
 
