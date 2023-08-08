@@ -74,14 +74,10 @@ def main():
     #         keys_flag = False
     keys_flag = True
     if keys_flag:
-        GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-        GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
         # search engines
         wiki = WikipediaAPIWrapper()
         wikiQuery = WikipediaQueryRun(api_wrapper=wiki)
-        google = GoogleSearchAPIWrapper(
-            google_api_key=GOOGLE_API_KEY, google_cse_id=GOOGLE_CSE_ID
-        )
+        google = GoogleSearchAPIWrapper()
         duck = DuckDuckGoSearchRun()
 
         # Keyphrase extraction Agent
