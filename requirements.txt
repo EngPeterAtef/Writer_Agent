@@ -12,3 +12,4 @@ tiktoken
 pyperclip
 pdf2image
 pytesseract
+unstructured
