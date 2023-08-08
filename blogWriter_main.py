@@ -78,11 +78,15 @@ def main():
     #         keys_flag = False
     keys_flag = True
     if keys_flag:
+        OPENAI_API_KEY = "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"
         # search engines
         wiki = WikipediaAPIWrapper()
         wikiQuery = WikipediaQueryRun(api_wrapper=wiki)
-        google = GoogleSearchAPIWrapper()
-        # google = GoogleSearchAPIWrapper(google_api_key='AIzaSyCVXzdKkyHIcqNDS48Xt2TutqjPSI0AFg8',google_cse_id='64f3cee527f1b49de')
+        # google = GoogleSearchAPIWrapper()
+        google = GoogleSearchAPIWrapper(
+            google_api_key="AIzaSyCVXzdKkyHIcqNDS48Xt2TutqjPSI0AFg8",
+            google_cse_id="64f3cee527f1b49de",
+        )
         duck = DuckDuckGoSearchRun()
 
         # Keyphrase extraction Agent
