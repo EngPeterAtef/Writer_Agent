@@ -155,8 +155,8 @@ def main():
                 "\n\n",
                 "\n\n\n",
             ],
-            chunk_size=1000,
-            chunk_overlap=200,
+            chunk_size=2000,
+            chunk_overlap=400,
         )
         summary_chain2 = load_summarize_chain(
             llm=summarize_llm,
@@ -195,12 +195,6 @@ def main():
         The title is: {title}.
         The subtitle is: {subtitle}.
         uploaded documents: {documents}.
-        google results: {google_results}.
-        wiki results: {wiki_results}.
-        duck results: {duck_results}.
-        google summary: {google_summary}.
-        duck summary: {duck_summary}.
-        The results summary is: {summary}.
         use the following template to write the blog:
         [TITLE]
         [SUBTITLE]
@@ -236,11 +230,7 @@ def main():
             Remove any bullet points and numbering systems so that the flow of the blog will be smooth.
             The blog should be structured implicitly, with an introduction at the beginning and a conclusion at the end of the blog without using the words introduction, body and conclusion.
             Try to use different words and sentences to make the blog more interesting.
-            The source of your information is the following:
-            a) The uploaded documents: {documents}.
-            b) The google results: {google_results}.
-            c) The wiki results: {wiki_results}.
-            d) The duck results: {duck_results}.
+            The source of your information is the uploaded documents: {documents}.
             Third, Check if the blog contains these keywords {keywords} and if not, add them to the blog.
             Fourth, Count the number of words in the blog because the number of words must be maximized to be {wordCount} and add more words to the blog to reach that number of words.
             """
@@ -252,12 +242,6 @@ def main():
                 "title",
                 "subtitle",
                 "documents",
-                "google_results",
-                "wiki_results",
-                "duck_results",
-                "google_summary",
-                "duck_summary",
-                "summary",
                 "keywords",
             ],
         )
@@ -268,9 +252,6 @@ def main():
                 "topic",
                 "outline",
                 "documents",
-                "google_results",
-                "wiki_results",
-                "duck_results",
                 "keywords",
                 "wordCount",
             ],
@@ -453,50 +434,53 @@ def main():
                     f"> Generating the title and subtitle took ({round(end - start, 2)} s)"
                 )
                 # Getting the search results
-                st.write("### Search Results")
-                start = time.time()
-                google_results = google.run(myTopic)
-                st.write("#### Google Search Results")
-                st.write(google_results[0 : len(google_results) // 2] + ".........")
-                duck_results = duck.run(myTopic)
-                st.write("#### DuckDuckGo Search Results")
-                st.write(duck_results[0 : len(duck_results) // 2] + ".........")
-                wiki_query_results = wikiQuery.run(myTopic)
-                st.write("#### Wikipedia Search Results")
-                st.write(wiki_query_results[0 : len(wiki_query_results) // 2])
-                st.write("#### References")
-                end = time.time()
-                st.write(
-                    f"> Generating the search results took ({round(end - start, 2)} s)"
-                )
-                # Summarize the search results
-                st.write("### Summarize the search results separately")
-                start = time.time()
-                google_summary = summary_chain.run(essay=google_results)
-                st.write("#### Google Search Results Summary")
-                st.write(google_summary[0 : len(google_summary)])
-                duck_summary = summary_chain.run(essay=duck_results)
-                st.write("#### DuckDuckGo Search Results Summary")
-                st.write(duck_summary[0 : len(duck_summary)])
-                # Summarize the search results together
-                st.write("### Summarize the search results together")
+                # st.write("### Search Results")
+                # start = time.time()
+                # google_results = google.run(myTopic)
+                # st.write("#### Google Search Results")
+                # st.write(google_results[0 : len(google_results) // 2] + ".........")
+                # duck_results = duck.run(myTopic)
+                # st.write("#### DuckDuckGo Search Results")
+                # st.write(duck_results[0 : len(duck_results) // 2] + ".........")
+                # wiki_query_results = wikiQuery.run(myTopic)
+                # st.write("#### Wikipedia Search Results")
+                # st.write(wiki_query_results[0 : len(wiki_query_results) // 2])
+                # st.write("#### References")
+                # end = time.time()
+                # st.write(
+                #     f"> Generating the search results took ({round(end - start, 2)} s)"
+                # )
+                # # Summarize the search results
+                # st.write("### Summarize the search results separately")
+                # start = time.time()
+                # google_summary = summary_chain.run(essay=google_results)
+                # st.write("#### Google Search Results Summary")
+                # st.write(google_summary[0 : len(google_summary)])
+                # duck_summary = summary_chain.run(essay=duck_results)
+                # st.write("#### DuckDuckGo Search Results Summary")
+                # st.write(duck_summary[0 : len(duck_summary)])
+                # # Summarize the search results together
+                # st.write("### Summarize the search results together")
 
-                results_docs = text_splitter.create_documents(
-                    [google_results, duck_results]
-                )
-                tot_summary = summary_chain2.run(results_docs)
-                tot_summary2 = summary_agent.run(
-                    f"can you provide me a summary about {myTopic} from each search engine separately? \ then use this information to combine all the summaries together to get a blog about {myTopic}."
-                )
-                st.write(tot_summary)
-                st.write(tot_summary2)
-                end = time.time()
-                st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
+                # results_docs = text_splitter.create_documents(
+                #     [google_results, duck_results]
+                # )
+                # tot_summary = summary_chain2.run(results_docs)
+                # tot_summary2 = summary_agent.run(
+                #     f"can you provide me a summary about {myTopic} from each search engine separately? \ then use this information to combine all the summaries together to get a blog about {myTopic}."
+                # )
+                # st.write(tot_summary)
+                # st.write(tot_summary2)
+                # end = time.time()
+                # st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
 
                 # write the blog outline
                 st.write("### Blog Outline")
                 start = time.time()
-
+                if "uploaded_docs" in st.session_state:
+                    uploaded_docs = st.session_state.uploaded_docs
+                print("uploaded_docs: ", len(uploaded_docs))
+                print("Creating vector store...")
                 vectorStore_openAI = FAISS.from_documents(
                     uploaded_docs, embedding=embeddings
                 )
@@ -512,12 +496,6 @@ def main():
                     title=title,
                     subtitle=subtitle,
                     documents=uploaded_docs,
-                    google_results=google_results,
-                    wiki_results=wiki_query_results,
-                    duck_results=duck_results,
-                    google_summary=google_summary,
-                    duck_summary=duck_summary,
-                    summary=tot_summary + tot_summary2,
                     keywords=keyword_list,
                     # websites=google_webpages1 + google_webpages2,
                 )
@@ -536,9 +514,6 @@ def main():
                     topic=myTopic,
                     outline=blog_outline,
                     documents=uploaded_docs,
-                    google_results=google_results,
-                    wiki_results=wiki_query_results,
-                    duck_results=duck_results,
                     keywords=keyword_list,
                     wordCount=myWordCount,
                 )
@@ -604,7 +579,7 @@ def main():
                     topic=myTopic,
                     keywords=keyword_list,
                     wordCount=myWordCount,
-                    summary=tot_summary + tot_summary2 + uploaded_docs,
+                    summary=uploaded_docs,
                     draft=draft1,
                     sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
@@ -643,9 +618,9 @@ def main():
                     topic=myTopic,
                     keywords=keyword_list,
                     wordCount=myWordCount,
-                    summary=tot_summary + tot_summary2 + uploaded_docs,
+                    summary=uploaded_docs,
                     draft=draft2,
-                    webpages=draft1_reference["sources"]
+                    sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
                     + str([doc.metadata["source"] for doc in uploaded_docs]),
                 )

@@ -523,7 +523,8 @@ def main():
                 print("Data loaded.")
                 data_docs = text_splitter.split_documents(documents=data)
                 print("Documents split.")
-                uploaded_docs = st.session_state["uploaded_docs"]
+                if "uploaded_docs" in st.session_state:
+                    uploaded_docs = st.session_state["uploaded_docs"]
                 print("uploaded documents: ", len(uploaded_docs))
                 print("websites documents: ", len(data_docs))
                 vectorStore_openAI = FAISS.from_documents(
@@ -675,7 +676,7 @@ def main():
                     wordCount=myWordCount,
                     summary=tot_summary + tot_summary2 + uploaded_docs,
                     draft=draft2,
-                    webpages=draft1_reference["sources"]
+                    sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
                     + str(google_webpages2)
                     + str([doc.metadata["source"] for doc in uploaded_docs]),
