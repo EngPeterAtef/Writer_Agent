@@ -456,10 +456,6 @@ def main():
                 st.write("### Search Results")
                 start = time.time()
                 google_results = google.run(myTopic)
-                google_webpages1 = google.results(
-                    f"site:https://en.wikipedia.org {myTopic}", 3
-                )
-                google_webpages2 = google.results(myTopic, 10)
                 st.write("#### Google Search Results")
                 st.write(google_results[0 : len(google_results) // 2] + ".........")
                 duck_results = duck.run(myTopic)
@@ -470,16 +466,6 @@ def main():
                 st.write(wiki_query_results[0 : len(wiki_query_results) // 2])
                 st.write("#### References")
                 end = time.time()
-                for i in range(len(google_webpages1)):
-                    st.write(
-                        f"**{i+1}. [{google_webpages1[i]['title']}]({google_webpages1[i]['link']}/ '{google_webpages1[i]['link']}')**"
-                    )
-                    st.write(f"{google_webpages1[i]['snippet']}")
-                for i in range(len(google_webpages2)):
-                    st.write(
-                        f"**{i+6}. [{google_webpages2[i]['title']}]({google_webpages2[i]['link']}/ '{google_webpages2[i]['link']}')**"
-                    )
-                    st.write(f"{google_webpages2[i]['snippet']}")
                 st.write(
                     f"> Generating the search results took ({round(end - start, 2)} s)"
                 )
@@ -506,28 +492,13 @@ def main():
                 st.write(tot_summary2)
                 end = time.time()
                 st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
-                links = []
-                for i in range(len(google_webpages1)):
-                    links.append(google_webpages1[i]["link"])
-
-                for i in range(len(google_webpages2)):
-                    links.append(google_webpages2[i]["link"])
 
                 # write the blog outline
                 st.write("### Blog Outline")
                 start = time.time()
 
-                loaders = UnstructuredURLLoader(urls=links)
-                print("Loading data...")
-                data = loaders.load()
-                print("Data loaded.")
-                data_docs = text_splitter.split_documents(documents=data)
-                print("Documents split.")
-                uploaded_docs = st.session_state["uploaded_docs"]
-                print("uploaded documents: ", len(uploaded_docs))
-                print("websites documents: ", len(data_docs))
                 vectorStore_openAI = FAISS.from_documents(
-                    data_docs + uploaded_docs, embedding=embeddings
+                    uploaded_docs, embedding=embeddings
                 )
                 print("Vector store created.")
 
@@ -637,7 +608,6 @@ def main():
                     draft=draft1,
                     sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
-                    + str(google_webpages2)
                     + str([doc.metadata["source"] for doc in uploaded_docs]),
                 )
                 end = time.time()
@@ -677,7 +647,6 @@ def main():
                     draft=draft2,
                     webpages=draft1_reference["sources"]
                     + draft1_reference["answer"]
-                    + str(google_webpages2)
                     + str([doc.metadata["source"] for doc in uploaded_docs]),
                 )
                 end = time.time()
