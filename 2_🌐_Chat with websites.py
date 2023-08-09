@@ -197,9 +197,7 @@ def main():
         google results: {google_results}.
         wiki results: {wiki_results}.
         duck results: {duck_results}.
-        google summary: {google_summary}.
-        duck summary: {duck_summary}.
-        The results summary is: {summary}.
+        websites: {websites}.
         use the following template to write the blog:
         [TITLE]
         [SUBTITLE]
@@ -235,6 +233,7 @@ def main():
             Remove any bullet points and numbering systems so that the flow of the blog will be smooth.
             The blog should be structured implicitly, with an introduction at the beginning and a conclusion at the end of the blog without using the words introduction, body and conclusion.
             Try to use different words and sentences to make the blog more interesting.
+            The source of your information is the following websites: {websites}.
             Third, Check if the blog contains these keywords {keywords} and if not, add them to the blog.
             Fourth, Count the number of words in the blog because the number of words must be maximized to be {wordCount} and add more words to the blog to reach that number of words.
             """
@@ -248,9 +247,7 @@ def main():
                 "google_results",
                 "wiki_results",
                 "duck_results",
-                "google_summary",
-                "duck_summary",
-                "summary",
+                "websites",
                 "keywords",
             ],
         )
@@ -260,6 +257,7 @@ def main():
             input_variables=[
                 "topic",
                 "outline",
+                "websites",
                 "keywords",
                 "wordCount",
             ],
@@ -357,19 +355,6 @@ def main():
             verbose=True,
         )
 
-        # writer_evaluation_chain = SequentialChain(
-        #     chains=[writer_chain, evaluation_chain],
-        #     input_variables=[
-        #         "topic",
-        #         "outline",
-        #         "keywords",
-        #         "summary",
-        #         "wordCount",
-        #     ],
-        #     output_variables=["draft", "blog"],
-        #     verbose=True,
-        # )
-
         # take the topic from the user
         embeddings = OpenAIEmbeddings()
         # with open("faiss_store_openai.pkl", "rb") as f:
@@ -443,33 +428,29 @@ def main():
                 st.write(
                     f"> Generating the search results took ({round(end - start, 2)} s)"
                 )
-                # Summarize the search results
-                st.write("### Summarize the search results separately")
-                start = time.time()
-                google_summary = summary_chain.run(essay=google_results)
-                st.write("#### Google Search Results Summary")
-                st.write(google_summary[0 : len(google_summary)])
-                duck_summary = summary_chain.run(essay=duck_results)
-                st.write("#### DuckDuckGo Search Results Summary")
-                st.write(duck_summary[0 : len(duck_summary)])
-                # Summarize the search results together
-                st.write("### Summarize the search results together")
-
-                results_docs = text_splitter.create_documents(
-                    [google_results, duck_results]
-                )
-                tot_summary = summary_chain2.run(results_docs)
-                tot_summary2 = summary_agent.run(
-                    f"can you provide me a summary about {myTopic} from each search engine separately? \ then use this information to combine all the summaries together to get a blog about {myTopic}."
-                )
-                st.write(tot_summary)
-                st.write(tot_summary2)
-                end = time.time()
-                st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
                 links = []
 
                 for i in range(len(google_webpages2)):
                     links.append(google_webpages2[i]["link"])
+
+                if "links" in st.session_state:
+                    inserted_links = st.session_state.links
+                print(inserted_links)
+                print(type(inserted_links))
+                loaders = UnstructuredURLLoader(urls=links + inserted_links)
+                print("Loading data...")
+                data = loaders.load()
+                print("Data loaded.")
+                data_docs = text_splitter.split_documents(documents=data)
+                print("Documents split.")
+                vectorStore_openAI = FAISS.from_documents(
+                    data_docs, embedding=embeddings
+                )
+                print("Vector store created.")
+                similar_docs = vectorStore_openAI.similarity_search(
+                    f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
+                    k=10,
+                )
 
                 # write the blog outline
                 st.write("### Blog Outline")
@@ -481,11 +462,8 @@ def main():
                     google_results=google_results,
                     wiki_results=wiki_query_results,
                     duck_results=duck_results,
-                    google_summary=google_summary,
-                    duck_summary=duck_summary,
-                    summary=tot_summary + tot_summary2,
+                    websites=similar_docs,
                     keywords=keyword_list,
-                    # websites=google_webpages1 + google_webpages2,
                 )
                 end = time.time()
                 st.write(blog_outline)
@@ -501,6 +479,7 @@ def main():
                 draft1 = writer_chain.run(
                     topic=myTopic,
                     outline=blog_outline,
+                    websites=similar_docs,
                     keywords=keyword_list,
                     wordCount=myWordCount,
                 )
@@ -517,19 +496,6 @@ def main():
                 # reference the blog
                 st.write("### Draft 1 References")
                 start = time.time()
-                inserted_links = st.session_state.links
-                print(inserted_links)
-                print(type(inserted_links))
-                loaders = UnstructuredURLLoader(urls=links + inserted_links)
-                print("Loading data...")
-                data = loaders.load()
-                print("Data loaded.")
-                data_docs = text_splitter.split_documents(documents=data)
-                print("Documents split.")
-                vectorStore_openAI = FAISS.from_documents(
-                    data_docs, embedding=embeddings
-                )
-                print("Vector store created.")
 
                 # with open("faiss_store_openai.pkl", "wb") as f:
                 #     pickle.dump(vectorStore_openAI, f)
@@ -549,9 +515,6 @@ def main():
                     include_run_info=True,
                 )
                 end = time.time()
-                # draft1_reference = reference_agent.run(
-                #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
-                # )
                 st.write(draft1_reference["answer"])
                 st.write(draft1_reference["sources"])
                 st.write(
@@ -559,24 +522,6 @@ def main():
                 )
                 #########################################
                 # evaluation agent
-                # drafts = writer_evaluation_chain(
-                #     {
-                #         "topic": myTopic,
-                #         "outline": blog_outline,
-                #         "keywords": keyword_list,
-                #         # "summary": tot_summary + tot_summary2,
-                #         "wordCount": myWordCount,
-                #     }
-                # )
-                # st.write("### Draft 1 V2")
-                # st.write(drafts["draft"])
-                # # get the number of words in a string: split on whitespace and end of line characters
-                # draft1_word_count = count_words_with_bullet_points(drafts["draft"])
-                # st.write(f"> Draft 1 word count: {draft1_word_count}")
-
-                # st.write("### Draft 2")
-                # st.write(drafts["blog"])
-                #######################################
                 # edit the first draft
                 st.write("### Draft 2")
                 start = time.time()
@@ -584,7 +529,7 @@ def main():
                     topic=myTopic,
                     keywords=keyword_list,
                     wordCount=myWordCount,
-                    summary=tot_summary + tot_summary2,
+                    summary=similar_docs,
                     draft=draft1,
                     webpages=draft1_reference["sources"]
                     + draft1_reference["answer"]
@@ -623,7 +568,7 @@ def main():
                     topic=myTopic,
                     keywords=keyword_list,
                     wordCount=myWordCount,
-                    summary=tot_summary + tot_summary2,
+                    summary=similar_docs,
                     draft=draft2,
                     webpages=draft1_reference["sources"]
                     + draft1_reference["answer"]
