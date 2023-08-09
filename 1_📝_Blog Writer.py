@@ -391,8 +391,6 @@ def main():
         myTopic = st.text_input("Write a blog about: ", key="query")
         # upload documents feature
         uploaded_docs = []
-        # with st.sidebar:
-        # st.subheader("Upload PDF documents")
         uploaded_files = st.file_uploader(
             "Upload PDF documents",
             accept_multiple_files=True,
