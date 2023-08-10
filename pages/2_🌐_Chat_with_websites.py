@@ -6,6 +6,7 @@ from langchain.utilities import (
 from langchain.tools import WikipediaQueryRun, DuckDuckGoSearchRun
 from langchain import OpenAI
 from dotenv import load_dotenv
+from langchain.callbacks import get_openai_callback
 
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain, SequentialChain
@@ -497,4 +498,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with get_openai_callback() as cb:
+        main()
+        print(cb)

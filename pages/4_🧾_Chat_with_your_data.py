@@ -24,6 +24,7 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
+from langchain.callbacks import get_openai_callback
 
 # import pyperclip
 from PyPDF2 import PdfReader
@@ -538,4 +539,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with get_openai_callback() as cb:
+        main()
+        print(cb)
