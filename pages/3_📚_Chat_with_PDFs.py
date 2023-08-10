@@ -24,6 +24,7 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
+from langchain.callbacks import get_openai_callback
 
 # import pyperclip
 from PyPDF2 import PdfReader
@@ -388,7 +389,7 @@ def main():
             st.success(
                 "Documents processed successfully. Now you can use the documents in the blog"
             )
-        
+
         if process_btn and not uploaded_files:
             st.warning("Please upload documents first")
 
@@ -445,9 +446,10 @@ def main():
 
                 # print("Vector store saved.")
 
+                num_docs = len(uploaded_docs)
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                    k=int(0.1 * len(uploaded_docs)),
+                    k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
                 )
 
                 blog_outline = writer_chain_outline.run(
@@ -469,10 +471,9 @@ def main():
                 st.write("### Draft 1")
                 start = time.time()
 
-                
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"blog outline: {blog_outline}",
-                    k=int(0.1 * len(uploaded_docs)),
+                    k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
                 )
 
                 draft1 = writer_chain.run(
@@ -512,7 +513,7 @@ def main():
                 # draft1_reference = reference_agent.run(
                 #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
                 # )
-                st.write(draft1_reference["answer"] + '\n\n')
+                st.write(draft1_reference["answer"] + "\n\n")
                 st.write(draft1_reference["sources"])
                 st.write(
                     f"> Generating the first draft reference took ({round(end - start, 2)} s)"
@@ -607,4 +608,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with get_openai_callback() as cb:
+        main()
+        print(cb)

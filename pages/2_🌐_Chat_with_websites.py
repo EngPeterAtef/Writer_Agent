@@ -361,9 +361,10 @@ def main():
                     data_docs, embedding=embeddings
                 )
                 print("Vector store created.")
+                num_docs = len(data_docs)
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                    k=int(0.1 * len(data_docs)),
+                    k=int(0.1 * num_docs) if int(0.1 * num_docs)<28 else 28,
                 )
 
                 # write the blog outline
@@ -393,7 +394,7 @@ def main():
 
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"blog outline: {blog_outline}",
-                    k=int(0.1 * len(data_docs)),
+                    k=int(0.1 * num_docs) if int(0.1 * num_docs)<28 else 28,
                 )
 
                 draft1 = writer_chain.run(

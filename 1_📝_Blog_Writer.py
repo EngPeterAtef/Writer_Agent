@@ -24,7 +24,7 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
-
+from langchain.callbacks import get_openai_callback
 # import pyperclip
 from PyPDF2 import PdfReader
 
@@ -540,9 +540,10 @@ def main():
                     data_docs + uploaded_docs, embedding=embeddings
                 )
                 print("Vector store created.")
+                num_docs = len(data_docs + uploaded_docs)
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                    k=int(0.1 * len(data_docs + uploaded_docs)),
+                    k=int(0.1 * num_docs) if int(0.1 * num_docs)<28 else 28,
                 )
                 # with open("faiss_store_openai.pkl", "wb") as f:
                 #     pickle.dump(vectorStore_openAI, f)
@@ -576,7 +577,7 @@ def main():
 
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"blog outline: {blog_outline}",
-                    k=int(0.1 * len(data_docs + uploaded_docs)),
+                    k=int(0.1 * num_docs) if int(0.1 * num_docs)<28 else 28,
                 )
                 draft1 = writer_chain.run(
                     topic=myTopic,
@@ -702,6 +703,11 @@ def main():
                 st.write(f"> Blog word count: {blog_word_count}")
                 st.write(f"> Generating the blog took ({round(end - start, 2)} s)")
                 st.success("Blog generated successfully")
+                #########################################
+                # get the cost per operation
+                st.write("### Cost per operation")
+                
+
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy the blog to clipboard", key="copy1")
                 # if copy_btn:
@@ -713,4 +719,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    with get_openai_callback() as cb:
+        main()
+        print(cb)
