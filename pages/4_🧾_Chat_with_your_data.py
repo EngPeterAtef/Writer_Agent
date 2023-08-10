@@ -209,29 +209,8 @@ def main():
             # verbose=True,
         )
 
-        # def google_search_results(topic):
-        #     results = google.results(query=myTopic, num_results=10)
-        #     return results
-
-        # reference agent
-        # reference_tools = [
-        #     Tool(
-        #         name="Google Search Results",
-        #         description="Search engine useful to get the most relevant web pages about single topic in general.",
-        #         func=google_search_results,
-        #     ),
-        # ]
 
         reference_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
-        # reference_agent = initialize_agent(
-        #     reference_tools,
-        #     llm=reference_llm,  # OpenAI(temperature=0),
-        #     agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        #     agent_name="Reference Agent",
-        #     description="Agent required to get the web pages that are most relevant to the blog.",
-        #     verbose=True,
-        #     handle_parsing_errors=True,
-        # )
 
         # evaluation agent
         evaluation_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
@@ -320,7 +299,8 @@ def main():
             accept_multiple_files=True,
             type="pdf",
         )
-        if st.button("Process Documents", use_container_width=True) and uploaded_files:
+        process_btn = st.button("Process Documents", use_container_width=True)
+        if process_btn and uploaded_files:
             with st.spinner("Processing your documents..."):
                 for file in uploaded_files:
                     pdf_reader = PdfReader(file)
@@ -343,6 +323,9 @@ def main():
             st.success(
                 "Documents processed successfully. Now you can use the documents in the blog"
             )
+        
+        if process_btn and not uploaded_files:
+            st.warning("Please upload documents first")
         myWordCount = st.number_input(
             "Enter the word count of the blog", min_value=100, max_value=3000, step=100
         )
@@ -421,10 +404,13 @@ def main():
                     f"> Generating the first Blog Outline took ({round(end - start, 2)} s)"
                 )
                 st.success("Blog Outline generated successfully")
-                similar_docs = vectorStore_openAI.similarity_search(f"blog outline: {blog_outline}", k=10)
+
                 # write the blog
                 st.write("### Draft 1")
                 start = time.time()
+
+                similar_docs = vectorStore_openAI.similarity_search(f"blog outline: {blog_outline}", k=10)
+                
                 draft1 = writer_chain.run(
                     topic=myTopic,
                     outline=blog_outline,
@@ -499,7 +485,7 @@ def main():
                     sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
                     + str(inserted_links)
-                    + str([doc.metadata["source"] for doc in uploaded_docs]),
+                    + str([doc.metadata["source"] for doc in similar_docs]),
                 )
                 end = time.time()
                 st.write(draft2)
@@ -539,7 +525,7 @@ def main():
                     sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
                     + str(inserted_links)
-                    + str([doc.metadata["source"] for doc in uploaded_docs]),
+                    + str([doc.metadata["source"] for doc in similar_docs]),
                 )
                 end = time.time()
                 st.write(blog)

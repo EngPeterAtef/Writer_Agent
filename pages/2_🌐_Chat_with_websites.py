@@ -476,6 +476,12 @@ def main():
                 # write the blog
                 st.write("### Draft 1")
                 start = time.time()
+
+                similar_docs = vectorStore_openAI.similarity_search(
+                    f"blog outline: {blog_outline}",
+                    k=10,
+                )
+
                 draft1 = writer_chain.run(
                     topic=myTopic,
                     outline=blog_outline,

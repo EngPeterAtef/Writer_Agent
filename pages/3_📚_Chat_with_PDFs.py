@@ -377,7 +377,8 @@ def main():
             accept_multiple_files=True,
             type="pdf",
         )
-        if st.button("Process Documents", use_container_width=True) and uploaded_files:
+        process_btn = st.button("Process Documents", use_container_width=True)
+        if process_btn and uploaded_files:
             with st.spinner("Processing your documents..."):
                 for file in uploaded_files:
                     pdf_reader = PdfReader(file)
@@ -400,6 +401,10 @@ def main():
             st.success(
                 "Documents processed successfully. Now you can use the documents in the blog"
             )
+        
+        if process_btn and not uploaded_files:
+            st.warning("Please upload documents first")
+
         myWordCount = st.number_input(
             "Enter the word count of the blog", min_value=100, max_value=3000, step=100
         )
@@ -433,52 +438,13 @@ def main():
                 st.write(
                     f"> Generating the title and subtitle took ({round(end - start, 2)} s)"
                 )
-                # Getting the search results
-                # st.write("### Search Results")
-                # start = time.time()
-                # google_results = google.run(myTopic)
-                # st.write("#### Google Search Results")
-                # st.write(google_results[0 : len(google_results) // 2] + ".........")
-                # duck_results = duck.run(myTopic)
-                # st.write("#### DuckDuckGo Search Results")
-                # st.write(duck_results[0 : len(duck_results) // 2] + ".........")
-                # wiki_query_results = wikiQuery.run(myTopic)
-                # st.write("#### Wikipedia Search Results")
-                # st.write(wiki_query_results[0 : len(wiki_query_results) // 2])
-                # st.write("#### References")
-                # end = time.time()
-                # st.write(
-                #     f"> Generating the search results took ({round(end - start, 2)} s)"
-                # )
-                # # Summarize the search results
-                # st.write("### Summarize the search results separately")
-                # start = time.time()
-                # google_summary = summary_chain.run(essay=google_results)
-                # st.write("#### Google Search Results Summary")
-                # st.write(google_summary[0 : len(google_summary)])
-                # duck_summary = summary_chain.run(essay=duck_results)
-                # st.write("#### DuckDuckGo Search Results Summary")
-                # st.write(duck_summary[0 : len(duck_summary)])
-                # # Summarize the search results together
-                # st.write("### Summarize the search results together")
-
-                # results_docs = text_splitter.create_documents(
-                #     [google_results, duck_results]
-                # )
-                # tot_summary = summary_chain2.run(results_docs)
-                # tot_summary2 = summary_agent.run(
-                #     f"can you provide me a summary about {myTopic} from each search engine separately? \ then use this information to combine all the summaries together to get a blog about {myTopic}."
-                # )
-                # st.write(tot_summary)
-                # st.write(tot_summary2)
-                # end = time.time()
-                # st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
 
                 # write the blog outline
                 st.write("### Blog Outline")
                 start = time.time()
                 if "uploaded_docs" in st.session_state:
                     uploaded_docs = st.session_state.uploaded_docs
+                
                 print("uploaded_docs: ", len(uploaded_docs))
                 print("Creating vector store...")
                 vectorStore_openAI = FAISS.from_documents(
@@ -491,11 +457,16 @@ def main():
 
                 # print("Vector store saved.")
 
+                similar_docs = vectorStore_openAI.similarity_search(
+                    f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
+                    k=10,
+                )
+
                 blog_outline = writer_chain_outline.run(
                     topic=myTopic,
                     title=title,
                     subtitle=subtitle,
-                    documents=uploaded_docs,
+                    documents=similar_docs,
                     keywords=keyword_list,
                     # websites=google_webpages1 + google_webpages2,
                 )
@@ -510,10 +481,17 @@ def main():
                 # write the blog
                 st.write("### Draft 1")
                 start = time.time()
+
+                
+                similar_docs = vectorStore_openAI.similarity_search(
+                    f"blog outline: {blog_outline}",
+                    k=10,
+                )
+
                 draft1 = writer_chain.run(
                     topic=myTopic,
                     outline=blog_outline,
-                    documents=uploaded_docs,
+                    documents=similar_docs,
                     keywords=keyword_list,
                     wordCount=myWordCount,
                 )
@@ -579,11 +557,11 @@ def main():
                     topic=myTopic,
                     keywords=keyword_list,
                     wordCount=myWordCount,
-                    summary=uploaded_docs,
+                    summary=similar_docs,
                     draft=draft1,
                     sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
-                    + str([doc.metadata["source"] for doc in uploaded_docs]),
+                    + str([doc.metadata["source"] for doc in similar_docs]),
                 )
                 end = time.time()
                 st.write(draft2)
@@ -618,11 +596,11 @@ def main():
                     topic=myTopic,
                     keywords=keyword_list,
                     wordCount=myWordCount,
-                    summary=uploaded_docs,
+                    summary=similar_docs,
                     draft=draft2,
                     sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
-                    + str([doc.metadata["source"] for doc in uploaded_docs]),
+                    + str([doc.metadata["source"] for doc in similar_docs]),
                 )
                 end = time.time()
                 st.write(blog)
