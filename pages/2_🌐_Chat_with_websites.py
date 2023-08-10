@@ -285,6 +285,8 @@ def main():
         if "links" in st.session_state:
             for link in st.session_state.links:
                 st.write(link)
+        if st.button("clear links", key="clear"):
+            st.session_state.links = []
         myWordCount = st.number_input(
             "Enter the word count of the blog", min_value=100, max_value=3000, step=100
         )

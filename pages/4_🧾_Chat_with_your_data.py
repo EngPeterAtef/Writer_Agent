@@ -277,6 +277,8 @@ def main():
         if "links" in st.session_state:
             for link in st.session_state.links:
                 st.write(link)
+        if st.button("clear links", key="clear"):
+            st.session_state.links = []
         # upload documents feature
         uploaded_docs = []
         uploaded_files = st.file_uploader(
