@@ -209,7 +209,6 @@ def main():
             # verbose=True,
         )
 
-
         reference_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
 
         # evaluation agent
@@ -219,7 +218,7 @@ def main():
         1- The blog must be relevant to {topic}.
         2- The blog must contain the following keywords: {keywords}.
         3- The blog must contain at least {wordCount} words so use the summary {summary} to add an interesting senternces to the blog.
-        4- Sources will be used as references so at the end of each paragraph, you should add a reference to the website using the source number in []. 
+        4- Sources will be used as references so at the end of each paragraph, you should add a reference to the source using the source number in []. 
         So, after each paragraph in the blog, refer to the source index that most relevant to it using the source number in [].
         The used sources should be listed at the end of the blog.
         [Sources]
@@ -260,20 +259,6 @@ def main():
             # output_key="blog",
             verbose=True,
         )
-
-        # writer_evaluation_chain = SequentialChain(
-        #     chains=[writer_chain, evaluation_chain],
-        #     input_variables=[
-        #         "topic",
-        #         "outline",
-        #         "keywords",
-        #         "summary",
-        #         "wordCount",
-        #     ],
-        #     output_variables=["draft", "blog"],
-        #     verbose=True,
-        # )
-
         # take the topic from the user
         embeddings = OpenAIEmbeddings()
         # with open("faiss_store_openai.pkl", "rb") as f:
@@ -323,7 +308,7 @@ def main():
             st.success(
                 "Documents processed successfully. Now you can use the documents in the blog"
             )
-        
+
         if process_btn and not uploaded_files:
             st.warning("Please upload documents first")
         myWordCount = st.number_input(
@@ -368,6 +353,8 @@ def main():
                     inserted_links = st.session_state.links
                 if "uploaded_docs" in st.session_state:
                     uploaded_docs = st.session_state.uploaded_docs
+                else:
+                    uploaded_docs = []
                 loaders = UnstructuredURLLoader(urls=inserted_links)
                 print("Loading data...")
                 data = loaders.load()
@@ -385,8 +372,10 @@ def main():
                 #     pickle.dump(vectorStore_openAI, f)
 
                 # get similar documents
-                similar_docs = vectorStore_openAI.similarity_search(f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}", k=10)
-
+                similar_docs = vectorStore_openAI.similarity_search(
+                    f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
+                    k=int(0.1 * len(data_docs + uploaded_docs)),
+                )
 
                 blog_outline = writer_chain_outline.run(
                     topic=myTopic,
@@ -409,8 +398,11 @@ def main():
                 st.write("### Draft 1")
                 start = time.time()
 
-                similar_docs = vectorStore_openAI.similarity_search(f"blog outline: {blog_outline}", k=10)
-                
+                similar_docs = vectorStore_openAI.similarity_search(
+                    f"blog outline: {blog_outline}",
+                    k=int(0.1 * len(data_docs + uploaded_docs)),
+                )
+
                 draft1 = writer_chain.run(
                     topic=myTopic,
                     outline=blog_outline,
@@ -448,7 +440,7 @@ def main():
                 # draft1_reference = reference_agent.run(
                 #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
                 # )
-                st.write(draft1_reference["answer"])
+                st.write(draft1_reference["answer"] + "\n\n")
                 st.write(draft1_reference["sources"])
                 st.write(
                     f"> Generating the first draft reference took ({round(end - start, 2)} s)"
@@ -484,7 +476,6 @@ def main():
                     draft=draft1,
                     sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
-                    + str(inserted_links)
                     + str([doc.metadata["source"] for doc in similar_docs]),
                 )
                 end = time.time()
@@ -524,7 +515,6 @@ def main():
                     draft=draft1,
                     sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
-                    + str(inserted_links)
                     + str([doc.metadata["source"] for doc in similar_docs]),
                 )
                 end = time.time()

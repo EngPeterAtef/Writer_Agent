@@ -542,7 +542,7 @@ def main():
                 print("Vector store created.")
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                    k=10,
+                    k=int(0.1 * len(data_docs + uploaded_docs)),
                 )
                 # with open("faiss_store_openai.pkl", "wb") as f:
                 #     pickle.dump(vectorStore_openAI, f)
@@ -576,7 +576,7 @@ def main():
 
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"blog outline: {blog_outline}",
-                    k=10,
+                    k=int(0.1 * len(data_docs + uploaded_docs)),
                 )
                 draft1 = writer_chain.run(
                     topic=myTopic,
@@ -618,7 +618,7 @@ def main():
                 # draft1_reference = reference_agent.run(
                 #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
                 # )
-                st.write(draft1_reference["answer"])
+                st.write(draft1_reference["answer"] + '\n\n')
                 st.write(draft1_reference["sources"])
                 st.write(
                     f"> Generating the first draft reference took ({round(end - start, 2)} s)"
@@ -654,7 +654,6 @@ def main():
                     draft=draft1,
                     sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
-                    + str(google_webpages2)
                     + str([doc.metadata["source"] for doc in similar_docs]),
                 )
                 end = time.time()
@@ -694,7 +693,6 @@ def main():
                     draft=draft1,
                     sources=draft1_reference["sources"]
                     + draft1_reference["answer"]
-                    + str(google_webpages2)
                     + str([doc.metadata["source"] for doc in similar_docs]),
                 )
                 end = time.time()

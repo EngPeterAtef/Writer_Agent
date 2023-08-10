@@ -307,7 +307,7 @@ def main():
         1- The blog must be relevant to {topic}.
         2- The blog must contain the following keywords: {keywords}.
         3- The blog must contain at least {wordCount} words so use the summary {summary} to add an interesting senternces to the blog.
-        4- Sources will be used as references so at the end of each paragraph, you should add a reference to the website using the source number in []. 
+        4- Sources will be used as references so at the end of each paragraph, you should add a reference to the source using the source number in []. 
         So, after each paragraph in the blog, refer to the source index that most relevant to it using the source number in [].
         The used sources should be listed at the end of the blog.
         [Sources]
@@ -348,19 +348,6 @@ def main():
             # output_key="blog",
             verbose=True,
         )
-
-        # writer_evaluation_chain = SequentialChain(
-        #     chains=[writer_chain, evaluation_chain],
-        #     input_variables=[
-        #         "topic",
-        #         "outline",
-        #         "keywords",
-        #         "summary",
-        #         "wordCount",
-        #     ],
-        #     output_variables=["draft", "blog"],
-        #     verbose=True,
-        # )
 
         # take the topic from the user
         embeddings = OpenAIEmbeddings()
@@ -444,7 +431,8 @@ def main():
                 start = time.time()
                 if "uploaded_docs" in st.session_state:
                     uploaded_docs = st.session_state.uploaded_docs
-                
+                else:
+                    uploaded_docs = []
                 print("uploaded_docs: ", len(uploaded_docs))
                 print("Creating vector store...")
                 vectorStore_openAI = FAISS.from_documents(
@@ -459,7 +447,7 @@ def main():
 
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                    k=10,
+                    k=int(0.1 * len(uploaded_docs)),
                 )
 
                 blog_outline = writer_chain_outline.run(
@@ -468,7 +456,6 @@ def main():
                     subtitle=subtitle,
                     documents=similar_docs,
                     keywords=keyword_list,
-                    # websites=google_webpages1 + google_webpages2,
                 )
                 end = time.time()
                 st.write(blog_outline)
@@ -485,7 +472,7 @@ def main():
                 
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"blog outline: {blog_outline}",
-                    k=10,
+                    k=int(0.1 * len(uploaded_docs)),
                 )
 
                 draft1 = writer_chain.run(
@@ -525,7 +512,7 @@ def main():
                 # draft1_reference = reference_agent.run(
                 #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
                 # )
-                st.write(draft1_reference["answer"])
+                st.write(draft1_reference["answer"] + '\n\n')
                 st.write(draft1_reference["sources"])
                 st.write(
                     f"> Generating the first draft reference took ({round(end - start, 2)} s)"

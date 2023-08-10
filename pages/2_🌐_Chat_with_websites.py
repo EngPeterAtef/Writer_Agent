@@ -125,21 +125,6 @@ def main():
             handle_parsing_errors=True,
         )
 
-        # summarize the results separately
-        summary_prompt = """Please Provide a summary of the following essay
-        The essay is: {essay}.
-        The summary is:"""
-        summary_prompt_template = PromptTemplate(
-            template=summary_prompt,
-            input_variables=["essay"],
-        )
-        summarize_llm = ChatOpenAI(
-            temperature=0, model="gpt-3.5-turbo-16k"
-        )  # or OpenAI(temperature=0)
-        summary_chain = LLMChain(
-            llm=summarize_llm,
-            prompt=summary_prompt_template,
-        )
         # summarize the results together
         text_splitter = RecursiveCharacterTextSplitter(
             separators=[
@@ -158,36 +143,6 @@ def main():
             chunk_size=1000,
             chunk_overlap=200,
         )
-        summary_chain2 = load_summarize_chain(
-            llm=summarize_llm,
-            chain_type="map_reduce",
-        )
-        # create a summary agent
-        summary_tools = [
-            Tool(
-                name="Intermediate Answer",
-                func=wikiQuery.run,
-                description="Use it when you want to get article summary from Wikipedia about specific topic",
-            ),
-            Tool(
-                name="Google Search",
-                description="Search engine useful when you want to get information from Google about single topic in general.",
-                func=google.run,
-            ),
-            Tool(
-                name="DuckDuckGo Search",
-                description="Search engine useful when you want to get information from DuckDuckGo about single topic in general.",
-                func=duck.run,
-            ),
-        ]
-        summary_agent = initialize_agent(
-            summary_tools,
-            llm=summarize_llm,
-            agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-            agent_name="Summary Agent",
-            verbose=True,
-            handle_parsing_errors=True,
-        )
         # create a blog writer agent
         prompt_writer_outline = """You are an expert online blogger with expert writing skills and I want you to only write out the breakdown of each section of the blog on the topic of {topic} 
         using the following information:
@@ -205,27 +160,6 @@ def main():
         [BODY IN DETIALED BULLET POINTS]
         [SUMMARY AND CONCLUSION]
         """
-        # prompt_writer_outline = """You are an expert online blogger with expert writing skills and I want you to only write out the breakdown of each section of the blog on the topic of {topic}
-        # using the following information:
-        # keywords: {keywords}.
-        # The title is: {title}.
-        # The subtitle is: {subtitle}.
-        # google results: {google_results}.
-        # wiki results: {wiki_results}.
-        # duck results: {duck_results}.
-        # google summary: {google_summary}.
-        # duck summary: {duck_summary}.
-        # The results summary is: {summary}.
-        # Websites: {websites} will be used as references so at the end of each paragraph, you should add a reference to the website using the webstie number in [].
-        # The outline should be very detailed so that the number of words will be maximized so use all the previous information, with an introduction at the beginning and a conclusion at the end of the blog.
-        # use the following template to write the blog:
-        # [TITLE]
-        # [SUBTITLE]
-        # [introduction]
-        # [BODY IN DETIALED BULLET POINTS]
-        # [SUMMARY AND CONCLUSION]
-        # [REFERENCES]
-        # """
         prompt_writer = """You are an experienced writer and author and you will write a blog in long form sentences using correct English grammar, where the quality would be suitable for an established online publisher.
             First, Search about the best way to write a blog about {topic}. THE BLOG MUST BE RELEVANT TO THE TOPIC.
             Second, use the following outline to write the blog: {outline} because the blog must write about the bullet points inside it and contain this information.
@@ -282,29 +216,7 @@ def main():
             verbose=True,
         )
 
-        def google_search_results(topic):
-            results = google.results(query=myTopic, num_results=10)
-            return results
-
-        # reference agent
-        # reference_tools = [
-        #     Tool(
-        #         name="Google Search Results",
-        #         description="Search engine useful to get the most relevant web pages about single topic in general.",
-        #         func=google_search_results,
-        #     ),
-        # ]
-
         reference_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
-        # reference_agent = initialize_agent(
-        #     reference_tools,
-        #     llm=reference_llm,  # OpenAI(temperature=0),
-        #     agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        #     agent_name="Reference Agent",
-        #     description="Agent required to get the web pages that are most relevant to the blog.",
-        #     verbose=True,
-        #     handle_parsing_errors=True,
-        # )
 
         # evaluation agent
         evaluation_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
@@ -409,7 +321,7 @@ def main():
                 start = time.time()
                 google_results = google.run(myTopic)
 
-                google_webpages2 = google.results(myTopic, 10)
+                google_webpages = google.results(myTopic, 10)
                 st.write("#### Google Search Results")
                 st.write(google_results[0 : len(google_results) // 2] + ".........")
                 duck_results = duck.run(myTopic)
@@ -418,20 +330,20 @@ def main():
                 wiki_query_results = wikiQuery.run(myTopic)
                 st.write("#### Wikipedia Search Results")
                 st.write(wiki_query_results[0 : len(wiki_query_results) // 2])
-                st.write("#### References")
+                st.write("#### Additional References")
                 end = time.time()
-                for i in range(len(google_webpages2)):
+                for i in range(len(google_webpages)):
                     st.write(
-                        f"**{i+1}. [{google_webpages2[i]['title']}]({google_webpages2[i]['link']}/ '{google_webpages2[i]['link']}')**"
+                        f"**{i+1}. [{google_webpages[i]['title']}]({google_webpages[i]['link']}/ '{google_webpages[i]['link']}')**"
                     )
-                    st.write(f"{google_webpages2[i]['snippet']}")
+                    st.write(f"{google_webpages[i]['snippet']}")
                 st.write(
                     f"> Generating the search results took ({round(end - start, 2)} s)"
                 )
                 links = []
 
-                for i in range(len(google_webpages2)):
-                    links.append(google_webpages2[i]["link"])
+                for i in range(len(google_webpages)):
+                    links.append(google_webpages[i]["link"])
 
                 if "links" in st.session_state:
                     inserted_links = st.session_state.links
@@ -449,7 +361,7 @@ def main():
                 print("Vector store created.")
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                    k=10,
+                    k=int(0.1 * len(data_docs)),
                 )
 
                 # write the blog outline
@@ -479,7 +391,7 @@ def main():
 
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"blog outline: {blog_outline}",
-                    k=10,
+                    k=int(0.1 * len(data_docs)),
                 )
 
                 draft1 = writer_chain.run(
@@ -521,7 +433,7 @@ def main():
                     include_run_info=True,
                 )
                 end = time.time()
-                st.write(draft1_reference["answer"])
+                st.write(draft1_reference["answer"] + '\n\n')
                 st.write(draft1_reference["sources"])
                 st.write(
                     f"> Generating the first draft reference took ({round(end - start, 2)} s)"
@@ -539,7 +451,7 @@ def main():
                     draft=draft1,
                     webpages=draft1_reference["sources"]
                     + draft1_reference["answer"]
-                    + str(google_webpages2),
+                    + str([doc.metadata["source"] for doc in similar_docs]),
                 )
                 end = time.time()
                 st.write(draft2)
@@ -549,22 +461,6 @@ def main():
                 st.write(f"> Editing the first draft took ({round(end - start, 2)} s)")
                 st.success("Draft 2 generated successfully")
                 #########################################
-                # draft2 reference
-                # st.write("### Draft 2 References")
-                # start = time.time()
-                # draft2_reference = chain(
-                #     {
-                #         "question": f"First, Search for each paragraph in the following text {draft2} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
-                #     },
-                #     include_run_info=True,
-                # )
-                # end = time.time()
-
-                # st.write(draft2_reference["answer"])
-                # st.write(draft2_reference["sources"])
-                # st.write(
-                #     f"> Generating the second draft reference took ({round(end - start, 2)} s)"
-                # )
                 #########################################
                 # edit the second draft
                 # write the blog
@@ -578,7 +474,7 @@ def main():
                     draft=draft2,
                     webpages=draft1_reference["sources"]
                     + draft1_reference["answer"]
-                    + str(google_webpages2),
+                    + str([doc.metadata["source"] for doc in similar_docs]),
                 )
                 end = time.time()
                 st.write(blog)
