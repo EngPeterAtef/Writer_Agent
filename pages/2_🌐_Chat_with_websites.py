@@ -491,7 +491,7 @@ def main():
                 # copy_btn = st.button("Copy the blog to clipboard", key="copy1")
                 # if copy_btn:
                 #     pyperclip.copy(draft1)
-                st.success("The blog copied to clipboard")
+                # st.success("The blog copied to clipboard")
             except Exception as e:
                 st.error("Something went wrong, please try again")
                 st.error(e)

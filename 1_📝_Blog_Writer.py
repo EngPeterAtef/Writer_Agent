@@ -705,7 +705,7 @@ def main():
                 st.success("Blog generated successfully")
                 #########################################
                 # get the cost per operation
-                st.write("### Cost per operation")
+                # st.write("### Cost per operation")
                 
 
                 # add copy button to copy the draft to the clipboard
