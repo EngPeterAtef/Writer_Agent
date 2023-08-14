@@ -79,6 +79,9 @@ def main():
         # os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
         # os.environ["GOOGLE_API_KEY"] = "AIzaSyAoqW-8TgiLNFYUEwZZ692kxFXRaqKnXTI"
         # os.environ["GOOGLE_CSE_ID"] = "024c21082dfaf4f23"
+        OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+        GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+        GOOGLE_CX_KEY = os.getenv("GOOGLE_CSE_ID")
         # search engines
         wiki = WikipediaAPIWrapper()
         wikiQuery = WikipediaQueryRun(api_wrapper=wiki)

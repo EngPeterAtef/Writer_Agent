@@ -76,9 +76,12 @@ def main():
     keys_flag = True
     if keys_flag:
         # OPENAI_API_KEY = "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"
-        # os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+        # os.environ["OPENAI_API_KEY"] = 
         # os.environ["GOOGLE_API_KEY"] = "AIzaSyCVXzdKkyHIcqNDS48Xt2TutqjPSI0AFg8"
         # os.environ["GOOGLE_CSE_ID"] = "64f3cee527f1b49de"
+        OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+        GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+        GOOGLE_CX_KEY = os.getenv("GOOGLE_CSE_ID")
         # search engines
         wiki = WikipediaAPIWrapper()
         wikiQuery = WikipediaQueryRun(api_wrapper=wiki)

@@ -88,6 +88,9 @@ def main():
         # environmet=PINECONE_API_ENV,
         # api_key=PINECONE_API_KEY,
         # )
+        OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+        GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+        GOOGLE_CX_KEY = os.getenv("GOOGLE_CSE_ID")
         # search engines
         google = GoogleSearchAPIWrapper()
         duck = DuckDuckGoSearchRun()
