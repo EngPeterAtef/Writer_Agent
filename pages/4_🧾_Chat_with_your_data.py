@@ -32,10 +32,12 @@ from constants import (
     PINECONE_API_KEY,
     PINECONE_API_ENV,
 )
+
 # import pyperclip
 from PyPDF2 import PdfReader
-# from langchain.vectorstores import Pinecone
-# import pinecone
+from langchain.vectorstores import Pinecone
+import pinecone
+
 
 def count_words_with_bullet_points(input_string):
     bullet_points = [
@@ -87,10 +89,12 @@ def main():
         os.environ["GOOGLE_CSE_ID"] = GOOGLE_CSE_ID
         os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
         os.environ["PINECONE_API_ENV"] = PINECONE_API_ENV
-        # pinecone.init(
-        # environmet=PINECONE_API_ENV,
-        # api_key=PINECONE_API_KEY,
-        # )
+        pinecone.init(
+            api_key=PINECONE_API_KEY,
+            environmet=PINECONE_API_ENV,
+        )
+        index_name = "blogs"
+        index = pinecone.Index(index_name)
         # search engines
         google = GoogleSearchAPIWrapper()
         duck = DuckDuckGoSearchRun()
@@ -287,11 +291,11 @@ def main():
                 st.session_state.links = [myLink]
             elif myLink not in st.session_state.links:
                 st.session_state.links += [myLink]
+        if st.button("clear links", key="clear"):
+            st.session_state.links = []
         if "links" in st.session_state:
             for link in st.session_state.links:
                 st.write(link)
-        if st.button("clear links", key="clear"):
-            st.session_state.links = []
         # upload documents feature
         uploaded_docs = []
         uploaded_files = st.file_uploader(
@@ -378,8 +382,13 @@ def main():
                 print("Documents split.")
                 print("uploaded documents: ", len(uploaded_docs))
                 print("websites documents: ", len(data_docs))
-                vectorStore_openAI = FAISS.from_documents(
-                    data_docs + uploaded_docs, embedding=embeddings
+                # vectorStore_openAI = FAISS.from_documents(
+                #     data_docs + uploaded_docs, embedding=embeddings
+                # )
+                vectorStore_openAI = Pinecone.from_documents(
+                    data_docs + uploaded_docs,
+                    embeddings,
+                    index_name=index_name,
                 )
                 print("Vector store created.")
 
@@ -390,7 +399,7 @@ def main():
                 num_docs = len(data_docs + uploaded_docs)
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                    k=int(0.1 * num_docs) if int(0.1 * num_docs)<28 else 28,
+                    k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
                 )
 
                 blog_outline = writer_chain_outline.run(
@@ -416,7 +425,7 @@ def main():
 
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"blog outline: {blog_outline}",
-                    k=int(0.1 * num_docs) if int(0.1 * num_docs)<28 else 28,
+                    k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
                 )
 
                 draft1 = writer_chain.run(
