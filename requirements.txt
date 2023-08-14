@@ -16,3 +16,4 @@ pytesseract
 unstructured
 PyPDF2
 detectron2-cdo
+torch
