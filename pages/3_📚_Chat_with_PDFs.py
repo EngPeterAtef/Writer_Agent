@@ -30,7 +30,7 @@ from langchain.callbacks import get_openai_callback
 from PyPDF2 import PdfReader
 
 
-def count_words_with_bullet_points(input_string):
+def count_words_with_bullet_points(input_string: str):
     bullet_points = [
         "*",
         "-",
@@ -75,10 +75,10 @@ def main():
     #         keys_flag = False
     keys_flag = True
     if keys_flag:
-        OPENAI_API_KEY = "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"
-        os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-        os.environ["GOOGLE_API_KEY"] = "AIzaSyAoqW-8TgiLNFYUEwZZ692kxFXRaqKnXTI"
-        os.environ["GOOGLE_CSE_ID"] = "024c21082dfaf4f23"
+        # OPENAI_API_KEY = "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"
+        # os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+        # os.environ["GOOGLE_API_KEY"] = "AIzaSyAoqW-8TgiLNFYUEwZZ692kxFXRaqKnXTI"
+        # os.environ["GOOGLE_CSE_ID"] = "024c21082dfaf4f23"
         # search engines
         wiki = WikipediaAPIWrapper()
         wikiQuery = WikipediaQueryRun(api_wrapper=wiki)
