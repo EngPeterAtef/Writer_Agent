@@ -14,5 +14,3 @@ pdf2image
 pytesseract
 unstructured
 PyPDF2
-detectron2-cdo
-torch
