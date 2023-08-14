@@ -27,7 +27,13 @@ from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.callbacks import get_openai_callback
 # import pyperclip
 from PyPDF2 import PdfReader
-
+from constants import (
+    OPENAI_API_KEY,
+    GOOGLE_API_KEY,
+    GOOGLE_CSE_ID,
+    PINECONE_API_KEY,
+    PINECONE_API_ENV,
+)
 
 def count_words_with_bullet_points(input_string):
     bullet_points = [
@@ -74,13 +80,11 @@ def main():
     #         keys_flag = False
     keys_flag = True
     if keys_flag:
-        # OPENAI_API_KEY = "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"
-        # os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-        # os.environ["GOOGLE_API_KEY"] = "AIzaSyAoqW-8TgiLNFYUEwZZ692kxFXRaqKnXTI"
-        # os.environ["GOOGLE_CSE_ID"] = "024c21082dfaf4f23"
-        OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-        GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-        GOOGLE_CX_KEY = os.getenv("GOOGLE_CSE_ID")
+        os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+        os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+        os.environ["GOOGLE_CSE_ID"] = GOOGLE_CSE_ID
+        os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
+        os.environ["PINECONE_API_ENV"] = PINECONE_API_ENV
         # search engines
         wiki = WikipediaAPIWrapper()
         wikiQuery = WikipediaQueryRun(api_wrapper=wiki)

@@ -25,7 +25,13 @@ from langchain.embeddings import OpenAIEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.callbacks import get_openai_callback
-
+from constants import (
+    OPENAI_API_KEY,
+    GOOGLE_API_KEY,
+    GOOGLE_CSE_ID,
+    PINECONE_API_KEY,
+    PINECONE_API_ENV,
+)
 # import pyperclip
 from PyPDF2 import PdfReader
 # from langchain.vectorstores import Pinecone
@@ -76,21 +82,15 @@ def main():
     #         keys_flag = False
     keys_flag = True
     if keys_flag:
-        # OPENAI_API_KEY = "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"
-        # os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-        # os.environ["GOOGLE_API_KEY"] = "AIzaSyAoqW-8TgiLNFYUEwZZ692kxFXRaqKnXTI"
-        # os.environ["GOOGLE_CSE_ID"] = "024c21082dfaf4f23"
-        # os.environ["PINECONE_API_KEY"] = "e8dcb0e2-aaf5-4283-ba93-7945978c74fb"
-        # os.environ["PINECONE_API_ENV"] = "gcp-starter"
-        # PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-        # PINECONE_API_ENV = os.getenv("PINECONE_API_ENV")
+        os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+        os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+        os.environ["GOOGLE_CSE_ID"] = GOOGLE_CSE_ID
+        os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
+        os.environ["PINECONE_API_ENV"] = PINECONE_API_ENV
         # pinecone.init(
         # environmet=PINECONE_API_ENV,
         # api_key=PINECONE_API_KEY,
         # )
-        OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-        GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-        GOOGLE_CX_KEY = os.getenv("GOOGLE_CSE_ID")
         # search engines
         google = GoogleSearchAPIWrapper()
         duck = DuckDuckGoSearchRun()
