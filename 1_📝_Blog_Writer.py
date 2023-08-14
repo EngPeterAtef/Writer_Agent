@@ -684,7 +684,7 @@ def main():
                 #########################################
                 # edit the second draft
                 # write the blog
-                st.write("### Blog")
+                st.write("### Final Blog")
                 start = time.time()
                 blog = evaluation_chain.run(
                     topic=myTopic,

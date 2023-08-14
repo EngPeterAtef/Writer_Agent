@@ -28,8 +28,8 @@ from langchain.callbacks import get_openai_callback
 
 # import pyperclip
 from PyPDF2 import PdfReader
-from langchain.vectorstores import Pinecone
-import pinecone
+# from langchain.vectorstores import Pinecone
+# import pinecone
 
 def count_words_with_bullet_points(input_string):
     bullet_points = [
@@ -518,7 +518,7 @@ def main():
                 #########################################
                 # edit the second draft
                 # write the blog
-                st.write("### Blog")
+                st.write("### Final Blog")
                 start = time.time()
                 blog = evaluation_chain.run(
                     topic=myTopic,

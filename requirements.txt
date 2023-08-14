@@ -1,6 +1,7 @@
 faiss_cpu==1.7.4
 streamlit==1.18.1
-langchain==0.0.249
+# langchain==0.0.249
+langchain
 python-dotenv
 streamlit==1.18.1
 altair<5
