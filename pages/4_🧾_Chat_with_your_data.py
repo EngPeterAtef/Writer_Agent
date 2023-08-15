@@ -61,8 +61,9 @@ def main():
 
     st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
     st.title("Blog Writer Agent: Write a blog about any topic 💬")
-    # with st.sidebar:
-    #     st.subheader("Enter the required keys")
+
+    with st.sidebar:
+        st.subheader("Progress")
 
     #     st.write("Please enter your OPENAI API KEY")
     #     OPENAI_API_KEY = st.text_input("OPENAI API KEY", type="password")
@@ -82,6 +83,7 @@ def main():
     #         # warning message
     #         st.warning("Please enter your API KEY first", icon="⚠")
     #         keys_flag = False
+
     keys_flag = True
     if keys_flag:
         os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
@@ -89,12 +91,12 @@ def main():
         os.environ["GOOGLE_CSE_ID"] = GOOGLE_CSE_ID
         os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
         os.environ["PINECONE_API_ENV"] = PINECONE_API_ENV
-        pinecone.init(
-            api_key=PINECONE_API_KEY,
-            environmet=PINECONE_API_ENV,
-        )
-        index_name = "blogs"
-        index = pinecone.Index(index_name)
+        # pinecone.init(
+        #     api_key=PINECONE_API_KEY,
+        #     environmet=PINECONE_API_ENV,
+        # )
+        # index_name = "blogs"
+        # index = pinecone.Index(index_name)
         # search engines
         google = GoogleSearchAPIWrapper()
         duck = DuckDuckGoSearchRun()
@@ -281,7 +283,12 @@ def main():
         # with open("faiss_store_openai.pkl", "rb") as f:
         #     vectorStore_openAI = pickle.load(f)
 
-        st.header("Enter the topic of the blog")
+        st.subheader(
+            "This is a blog writer agent that uses the following as sources of information:"
+        )
+        # unordered list
+        st.markdown("""- Inserted Websites""")
+        st.markdown("""- Uploading PDF documents""")
 
         myTopic = st.text_input("Write a blog about: ", key="query")
         myLink = st.text_input("Related Websites ", key="link")
@@ -337,6 +344,7 @@ def main():
         goBtn = st.button("**Go**", key="go", use_container_width=True)
 
         if goBtn:
+            # tab1, tab2, tab3 = st.tabs(["Title and Subtitle", "Keywords", "Owl"])
             try:
                 start = time.time()
                 keyword_list = keyword_agent.run(
@@ -364,6 +372,7 @@ def main():
                     f"> Generating the title and subtitle took ({round(end - start, 2)} s)"
                 )
 
+
                 # write the blog outline
                 st.write("### Blog Outline")
                 start = time.time()
@@ -382,14 +391,14 @@ def main():
                 print("Documents split.")
                 print("uploaded documents: ", len(uploaded_docs))
                 print("websites documents: ", len(data_docs))
-                # vectorStore_openAI = FAISS.from_documents(
-                #     data_docs + uploaded_docs, embedding=embeddings
-                # )
-                vectorStore_openAI = Pinecone.from_documents(
-                    data_docs + uploaded_docs,
-                    embeddings,
-                    index_name=index_name,
+                vectorStore_openAI = FAISS.from_documents(
+                    data_docs + uploaded_docs, embedding=embeddings
                 )
+                # vectorStore_openAI = Pinecone.from_documents(
+                #     data_docs + uploaded_docs,
+                #     embeddings,
+                #     index_name=index_name,
+                # )
                 print("Vector store created.")
 
                 # with open("faiss_store_openai.pkl", "wb") as f:

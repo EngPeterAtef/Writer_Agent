@@ -362,7 +362,11 @@ def main():
         # with open("faiss_store_openai.pkl", "rb") as f:
         #     vectorStore_openAI = pickle.load(f)
 
-        st.header("Enter the topic of the blog")
+        st.subheader(
+            "This is a blog writer agent that uses the following as sources of information:"
+        )
+        # unordered list
+        st.markdown("""- Uploading PDF documents""")
 
         myTopic = st.text_input("Write a blog about: ", key="query")
         # upload documents feature

@@ -25,6 +25,7 @@ from langchain.embeddings import OpenAIEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.callbacks import get_openai_callback
+
 # import pyperclip
 from PyPDF2 import PdfReader
 from constants import (
@@ -34,6 +35,7 @@ from constants import (
     PINECONE_API_KEY,
     PINECONE_API_ENV,
 )
+
 
 def count_words_with_bullet_points(input_string):
     bullet_points = [
@@ -393,7 +395,15 @@ def main():
         # with open("faiss_store_openai.pkl", "rb") as f:
         #     vectorStore_openAI = pickle.load(f)
 
-        st.header("Enter the topic of the blog")
+        st.subheader(
+            "This is a blog writer agent that uses the following as sources of information:"
+        )
+        # unordered list
+        st.markdown("""- Google Search Engine API""")
+        st.markdown("""- Wikipedia API""")
+        st.markdown("""- DuckDuckGo Search Engine API""")
+        st.markdown("""- Uploading PDF documents""")
+
 
         myTopic = st.text_input("Write a blog about: ", key="query")
         # upload documents feature
@@ -427,10 +437,10 @@ def main():
             st.success(
                 "Documents processed successfully. Now you can use the documents in the blog"
             )
-        
+
         if process_btn and not uploaded_files:
             st.warning("Please upload documents first")
-        
+
         myWordCount = st.number_input(
             "Enter the word count of the blog", min_value=100, max_value=3000, step=100
         )
@@ -540,7 +550,7 @@ def main():
                     uploaded_docs = st.session_state.uploaded_docs
                 else:
                     uploaded_docs = []
-                
+
                 print("uploaded documents: ", len(uploaded_docs))
                 print("websites documents: ", len(data_docs))
                 vectorStore_openAI = FAISS.from_documents(
@@ -550,7 +560,7 @@ def main():
                 num_docs = len(data_docs + uploaded_docs)
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                    k=int(0.1 * num_docs) if (int(0.1 * num_docs)<28) else 28,
+                    k=int(0.1 * num_docs) if (int(0.1 * num_docs) < 28) else 28,
                 )
                 # with open("faiss_store_openai.pkl", "wb") as f:
                 #     pickle.dump(vectorStore_openAI, f)
@@ -584,7 +594,7 @@ def main():
 
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"blog outline: {blog_outline}",
-                    k=int(0.1 * num_docs) if int(0.1 * num_docs)<28 else 28,
+                    k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
                 )
                 draft1 = writer_chain.run(
                     topic=myTopic,
@@ -626,7 +636,7 @@ def main():
                 # draft1_reference = reference_agent.run(
                 #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
                 # )
-                st.write(draft1_reference["answer"] + '\n\n')
+                st.write(draft1_reference["answer"] + "\n\n")
                 st.write(draft1_reference["sources"])
                 st.write(
                     f"> Generating the first draft reference took ({round(end - start, 2)} s)"
@@ -713,7 +723,6 @@ def main():
                 #########################################
                 # get the cost per operation
                 # st.write("### Cost per operation")
-                
 
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy the blog to clipboard", key="copy1")
