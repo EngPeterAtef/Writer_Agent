@@ -344,7 +344,6 @@ def main():
         goBtn = st.button("**Go**", key="go", use_container_width=True)
 
         if goBtn:
-            # tab1, tab2, tab3 = st.tabs(["Title and Subtitle", "Keywords", "Owl"])
             try:
                 start = time.time()
                 keyword_list = keyword_agent.run(
