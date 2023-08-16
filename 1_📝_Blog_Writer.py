@@ -483,20 +483,20 @@ def main():
         draft2 = ""
         inserted_links = []
 
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
+            [
+                "Keywords list",
+                "Title and Subtitle",
+                "Search Results",
+                "Summary",
+                "Blog Outline",
+                "Draft 1",
+                "Draft 2",
+                "Final Blog",
+            ]
+        )
         if goBtn:
             try:
-                tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
-                    [
-                        "Keywords list",
-                        "Title and Subtitle",
-                        "Search Results",
-                        "Summary",
-                        "Blog Outline",
-                        "Draft 1",
-                        "Draft 2",
-                        "Final Blog",
-                    ]
-                )
                 with tab1:
                     with st.spinner("Generating the keywords list..."):
                         st.write("### Keywords list")
@@ -505,6 +505,7 @@ def main():
                             f"Search about {myTopic} and use the results to get the important keywords related to {myTopic} to help to write a blog about {myTopic}."
                         )
                         end = time.time()
+                        st.session_state.keywords_list_1 = keyword_list
                         # show the keywords list to the user
                         st.write(keyword_list)
                         st.write(
@@ -525,6 +526,8 @@ def main():
                             f"Suggest a suitable subtitle for a blog about {myTopic} for the a blog with a title {title} using the following keywords {keyword_list}?",
                         )
                         end = time.time()
+                        st.session_state.title_1 = title
+                        st.session_state.subtitle_1 = subtitle
                         st.write(title)
                         st.write("### Subtitle")
                         st.write(subtitle)
@@ -554,8 +557,14 @@ def main():
                         wiki_query_results = wikiQuery.run(myTopic)
                         st.write("#### Wikipedia Search Results")
                         st.write(wiki_query_results[0 : len(wiki_query_results) // 2])
-                        st.write("#### References")
                         end = time.time()
+                        st.session_state.google_results1 = google_results
+                        st.session_state.duck_results1 = duck_results
+                        st.session_state.wiki_query_results1 = wiki_query_results
+                        st.session_state.google_webpages1 = google_webpages1
+                        st.session_state.google_webpages2 = google_webpages2
+
+                        st.write("#### References")
                         for i in range(len(google_webpages1)):
                             st.write(
                                 f"**{i+1}. [{google_webpages1[i]['title']}]({google_webpages1[i]['link']}/ '{google_webpages1[i]['link']}')**"
@@ -596,6 +605,11 @@ def main():
                         st.write(tot_summary)
                         st.write(tot_summary2)
                         end = time.time()
+                        st.session_state.google_summary1 = google_summary
+                        st.session_state.duck_summary1 = duck_summary
+                        st.session_state.tot_summary1 = tot_summary
+                        st.session_state.tot_summary2 = tot_summary2
+
                         st.write(
                             f"> Generating the summaries took ({round(end - start, 2)} s)"
                         )
@@ -660,6 +674,7 @@ def main():
                             keywords=keyword_list,
                         )
                         end = time.time()
+                        st.session_state.blog_outline_1 = blog_outline
                         st.write(blog_outline)
                         # get the number of words in a string: split on whitespace and end of line characters
                         # blog_outline_word_count = count_words_with_bullet_points(blog_outline)
@@ -692,6 +707,7 @@ def main():
                             wordCount=myWordCount,
                         )
                         end = time.time()
+                        st.session_state.draft1_1 = draft1
                         st.write(draft1)
                         # get the number of words in a string: split on whitespace and end of line characters
                         draft1_word_count = count_words_with_bullet_points(draft1)
@@ -720,6 +736,7 @@ def main():
                             include_run_info=True,
                         )
                         end = time.time()
+                        st.session_state.draft1_reference1_1 = draft1_reference
                         # draft1_reference = reference_agent.run(
                         #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
                         # )
@@ -730,25 +747,6 @@ def main():
                         )
                         progress += 0.125
                         progress_bar.progress(progress)
-                #########################################
-                # evaluation agent
-                # drafts = writer_evaluation_chain(
-                #     {
-                #         "topic": myTopic,
-                #         "outline": blog_outline,
-                #         "keywords": keyword_list,
-                #         # "summary": tot_summary + tot_summary2,
-                #         "wordCount": myWordCount,
-                #     }
-                # )
-                # st.write("### Draft 1 V2")
-                # st.write(drafts["draft"])
-                # # get the number of words in a string: split on whitespace and end of line characters
-                # draft1_word_count = count_words_with_bullet_points(drafts["draft"])
-                # st.write(f"> Draft 1 word count: {draft1_word_count}")
-
-                # st.write("### Draft 2")
-                # st.write(drafts["blog"])
                 #######################################
                 # edit the first draft
                 with tab7:
@@ -766,6 +764,7 @@ def main():
                             + str([doc.metadata["source"] for doc in similar_docs]),
                         )
                         end = time.time()
+                        st.session_state.draft2_1 = draft2
                         st.write(draft2)
                         # get the number of words in a string: split on whitespace and end of line characters
                         draft2_word_count = count_words_with_bullet_points(draft2)
@@ -777,22 +776,6 @@ def main():
                         progress += 0.125
                         progress_bar.progress(progress)
                 #########################################
-                # draft2 reference
-                # st.write("### Draft 2 References")
-                # start = time.time()
-                # draft2_reference = chain(
-                #     {
-                #         "question": f"First, Search for each paragraph in the following text {draft2} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
-                #     },
-                #     include_run_info=True,
-                # )
-                # end = time.time()
-
-                # st.write(draft2_reference["answer"])
-                # st.write(draft2_reference["sources"])
-                # st.write(
-                #     f"> Generating the second draft reference took ({round(end - start, 2)} s)"
-                # )
                 #########################################
                 # edit the second draft
                 # write the blog
@@ -811,6 +794,7 @@ def main():
                             + str([doc.metadata["source"] for doc in similar_docs]),
                         )
                         end = time.time()
+                        st.session_state.blog_1 = blog
                         st.write(blog)
                         # get the number of words in a string: split on whitespace and end of line characters
                         blog_word_count = count_words_with_bullet_points(blog)
@@ -836,8 +820,98 @@ def main():
             except Exception as e:
                 st.error("Something went wrong, please try again")
                 st.error(e)
+        else:
+            try:
+                print("not pressed")
+                with tab1:
+                    if st.session_state['keywords_list_1'] is not None:
+                        st.write("### Keywords list")
+                        st.write(st.session_state.keywords_list_1)
+                        progress += 0.125
+                        progress_bar.progress(progress)
+                with tab2:
+                    if st.session_state.title_1 is not None:
+                        st.write("### Title")
+                        st.write(st.session_state.title_1)
+                        st.write("### Subtitle")
+                        st.write(st.session_state.subtitle_1)
+                        progress += 0.125
+                        progress_bar.progress(progress)
+                with tab3:
+                    if st.session_state.google_results1 is not None:
+                        st.write("### Search Results")
+                        st.write("#### Google Search Results")
+                        st.write(st.session_state.google_results1)
+                        st.write("#### DuckDuckGo Search Results")
+                        st.write(st.session_state.duck_results1)
+                        st.write("#### Wikipedia Search Results")
+                        st.write(st.session_state.wiki_query_results1)
 
+                        google_webpages1 = st.session_state.google_webpages1
+                        google_webpages2 = st.session_state.google_webpages2
 
+                        st.write("#### References")
+                        for i in range(len(google_webpages1)):
+                            st.write(
+                                f"**{i+1}. [{google_webpages1[i]['title']}]({google_webpages1[i]['link']}/ '{google_webpages1[i]['link']}')**"
+                            )
+                            st.write(f"{google_webpages1[i]['snippet']}")
+                        for i in range(len(google_webpages2)):
+                            st.write(
+                                f"**{i+6}. [{google_webpages2[i]['title']}]({google_webpages2[i]['link']}/ '{google_webpages2[i]['link']}')**"
+                            )
+                            st.write(f"{google_webpages2[i]['snippet']}")
+                        progress += 0.125
+                        progress_bar.progress(progress)
+                with tab4:
+                    if st.session_state.google_summary1 is not None:
+                        st.write("### Summarize the search results separately")
+                        st.write("#### Google Search Results Summary")
+                        st.write(st.session_state.google_summary1)
+                        st.write("#### DuckDuckGo Search Results Summary")
+                        st.write(st.session_state.duck_summary1)
+                        # Summarize the search results together
+                        st.write("### Summarize the search results together")
+                        st.write(st.session_state.tot_summary1)
+                        st.write(st.session_state.tot_summary2)
+                        progress += 0.125
+                        progress_bar.progress(progress)
+                with tab5:
+                    if st.session_state.blog_outline_1 is not None:
+                        st.write("### Blog Outline")
+                        st.write(st.session_state.blog_outline_1)
+                        progress += 0.125
+                        progress_bar.progress(progress)
+                with tab6:
+                    if st.session_state.draft1_1 is not None:
+                        st.write("### Draft 1")
+                        st.write(st.session_state.draft1_1)
+                        # word count
+                        st.write(f"> Draft 1 word count: {count_words_with_bullet_points(st.session_state.draft1_1)}")
+                        st.write("### Draft 1 References")
+                        st.write(st.session_state.draft1_reference1_1['answer'])
+                        st.write(st.session_state.draft1_reference1_1['sources'])
+                        progress += 0.125
+                        progress_bar.progress(progress)
+                with tab7:
+                    if st.session_state.draft2_1 is not None:
+                        st.write("### Draft 2")
+                        st.write(st.session_state.draft2_1)
+                        # word count
+                        st.write(f"> Draft 2 word count: {count_words_with_bullet_points(st.session_state.draft2_1)}")
+                        progress += 0.125
+                        progress_bar.progress(progress)
+                with tab8:
+                    if st.session_state.blog_1 is not None:
+                        st.write("### Final Blog")
+                        st.write(st.session_state.blog_1)
+                        # word count
+                        st.write(f"> Blog word count: {count_words_with_bullet_points(st.session_state.blog_1)}")
+                        progress += 0.125
+                        progress_bar.progress(progress)
+                        st.balloons()
+            except Exception as e:
+                print(e)
 if __name__ == "__main__":
     with get_openai_callback() as cb:
         main()
