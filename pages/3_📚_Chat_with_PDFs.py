@@ -545,7 +545,9 @@ def main():
                     # draft1_reference = reference_agent.run(
                     #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
                     # )
-                    st.write(draft1_reference["answer"] + "\n\n")
+                    st.write("#### Relevant Text")
+                    st.write(draft1_reference["answer"])
+                    st.write("#### Relevant Sources")
                     st.write(draft1_reference["sources"])
                     st.write(
                         f"> Generating the first draft reference took ({round(end - start, 2)} s)"
@@ -637,6 +639,8 @@ def main():
                     st.success("Blog generated successfully")
                     progress =1.0
                     progress_bar.progress(progress)
+                    st.balloons()
+                    st.snow()
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy the blog to clipboard", key="copy1")
                 # if copy_btn:

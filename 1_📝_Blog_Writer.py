@@ -480,6 +480,7 @@ def main():
                     st.write(f"> Generating the keyword took ({round(end - start, 2)} s)")
                     progress+=0.125
                     progress_bar.progress(progress)
+
                 with tab2:
                 # Getting Title and SubTitle
                     st.write("### Title")
@@ -766,6 +767,9 @@ def main():
                     st.success("Blog generated successfully")
                     progress+=0.125
                     progress_bar.progress(progress)
+                    st.balloons()
+                    st.snow()
+
                 #########################################
                 # get the cost per operation
                 # st.write("### Cost per operation")
