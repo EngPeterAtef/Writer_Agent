@@ -365,151 +365,156 @@ def main():
                 )
 
                 with tab1:
-                    st.write("### Keywords list")
-                    start = time.time()
-                    keyword_list = keyword_agent.run(
-                        f"Search about {myTopic} and use the results to get the important keywords related to {myTopic} to help to write a blog about {myTopic}."
-                    )
-                    end = time.time()
-                    # show the keywords list to the user
-                    st.write(keyword_list)
-                    st.write(
-                        f"> Generating the keyword took ({round(end - start, 2)} s)"
-                    )
-                    progress += 0.16667
-                    progress_bar.progress(progress)
+                    with st.spinner("Generating keywords list..."):
+                        st.write("### Keywords list")
+                        start = time.time()
+                        keyword_list = keyword_agent.run(
+                            f"Search about {myTopic} and use the results to get the important keywords related to {myTopic} to help to write a blog about {myTopic}."
+                        )
+                        end = time.time()
+                        # show the keywords list to the user
+                        st.write(keyword_list)
+                        st.write(
+                            f"> Generating the keyword took ({round(end - start, 2)} s)"
+                        )
+                        progress += 0.16667
+                        progress_bar.progress(progress)
                 with tab2:
-                    # Getting Title and SubTitle
-                    st.write("### Title")
-                    start = time.time()
-                    title = self_ask_with_search.run(
-                        f"Suggest a titel for a blog about {myTopic} using the following keywords {keyword_list}?",
-                    )
-                    subtitle = self_ask_with_search.run(
-                        f"Suggest a suitable subtitle for a blog about {myTopic} for the a blog with a title {title} using the following keywords {keyword_list}?",
-                    )
-                    end = time.time()
-                    st.write(title)
-                    st.write("### Subtitle")
-                    st.write(subtitle)
-                    st.write(
-                        f"> Generating the title and subtitle took ({round(end - start, 2)} s)"
-                    )
-                    progress += 0.16667
-                    progress_bar.progress(progress)
+                    with st.spinner("Generating title and subtitle..."):
+                        # Getting Title and SubTitle
+                        st.write("### Title")
+                        start = time.time()
+                        title = self_ask_with_search.run(
+                            f"Suggest a titel for a blog about {myTopic} using the following keywords {keyword_list}?",
+                        )
+                        subtitle = self_ask_with_search.run(
+                            f"Suggest a suitable subtitle for a blog about {myTopic} for the a blog with a title {title} using the following keywords {keyword_list}?",
+                        )
+                        end = time.time()
+                        st.write(title)
+                        st.write("### Subtitle")
+                        st.write(subtitle)
+                        st.write(
+                            f"> Generating the title and subtitle took ({round(end - start, 2)} s)"
+                        )
+                        progress += 0.16667
+                        progress_bar.progress(progress)
 
                 with tab3:
-                    # write the blog outline
-                    st.write("### Blog Outline")
-                    start = time.time()
-                    inserted_links = []
-                    if "links" in st.session_state:
-                        inserted_links = st.session_state.links
-                    if "uploaded_docs" in st.session_state:
-                        uploaded_docs = st.session_state.uploaded_docs
-                    else:
-                        uploaded_docs = []
-                    loaders = UnstructuredURLLoader(urls=inserted_links)
-                    print("Loading data...")
-                    data = loaders.load()
-                    print("Data loaded.")
-                    data_docs = text_splitter.split_documents(documents=data)
-                    print("Documents split.")
-                    print("uploaded documents: ", len(uploaded_docs))
-                    print("websites documents: ", len(data_docs))
-                    vectorStore_openAI = FAISS.from_documents(
-                        data_docs + uploaded_docs, embedding=embeddings
-                    )
-                    # vectorStore_openAI = Pinecone.from_documents(
-                    #     data_docs + uploaded_docs,
-                    #     embeddings,
-                    #     index_name=index_name,
-                    # )
-                    print("Vector store created.")
+                    with st.spinner("Generating blog outline..."):
+                        # write the blog outline
+                        st.write("### Blog Outline")
+                        start = time.time()
+                        inserted_links = []
+                        if "links" in st.session_state:
+                            inserted_links = st.session_state.links
+                        if "uploaded_docs" in st.session_state:
+                            uploaded_docs = st.session_state.uploaded_docs
+                        else:
+                            uploaded_docs = []
+                        loaders = UnstructuredURLLoader(urls=inserted_links)
+                        print("Loading data...")
+                        data = loaders.load()
+                        print("Data loaded.")
+                        data_docs = text_splitter.split_documents(documents=data)
+                        print("Documents split.")
+                        print("uploaded documents: ", len(uploaded_docs))
+                        print("websites documents: ", len(data_docs))
+                        vectorStore_openAI = FAISS.from_documents(
+                            data_docs + uploaded_docs, embedding=embeddings
+                        )
+                        # vectorStore_openAI = Pinecone.from_documents(
+                        #     data_docs + uploaded_docs,
+                        #     embeddings,
+                        #     index_name=index_name,
+                        # )
+                        print("Vector store created.")
 
-                    # with open("faiss_store_openai.pkl", "wb") as f:
-                    #     pickle.dump(vectorStore_openAI, f)
+                        # with open("faiss_store_openai.pkl", "wb") as f:
+                        #     pickle.dump(vectorStore_openAI, f)
 
-                    # get similar documents
-                    num_docs = len(data_docs + uploaded_docs)
-                    similar_docs = vectorStore_openAI.similarity_search(
-                        f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                        k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
-                    )
+                        # get similar documents
+                        num_docs = len(data_docs + uploaded_docs)
+                        similar_docs = vectorStore_openAI.similarity_search(
+                            f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
+                            k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
+                        )
 
-                    blog_outline = writer_chain_outline.run(
-                        topic=myTopic,
-                        title=title,
-                        subtitle=subtitle,
-                        data=similar_docs,
-                        keywords=keyword_list,
-                    )
-                    end = time.time()
-                    st.write(blog_outline)
-                    # get the number of words in a string: split on whitespace and end of line characters
-                    # blog_outline_word_count = count_words_with_bullet_points(blog_outline)
-                    # st.write(f"> Blog Outline Word count: {blog_outline_word_count}")
-                    st.write(
-                        f"> Generating the first Blog Outline took ({round(end - start, 2)} s)"
-                    )
-                    st.success("Blog Outline generated successfully")
-                    progress += 0.16667
-                    progress_bar.progress(progress)
+                        blog_outline = writer_chain_outline.run(
+                            topic=myTopic,
+                            title=title,
+                            subtitle=subtitle,
+                            data=similar_docs,
+                            keywords=keyword_list,
+                        )
+                        end = time.time()
+                        st.write(blog_outline)
+                        # get the number of words in a string: split on whitespace and end of line characters
+                        # blog_outline_word_count = count_words_with_bullet_points(blog_outline)
+                        # st.write(f"> Blog Outline Word count: {blog_outline_word_count}")
+                        st.write(
+                            f"> Generating the first Blog Outline took ({round(end - start, 2)} s)"
+                        )
+                        st.success("Blog Outline generated successfully")
+                        progress += 0.16667
+                        progress_bar.progress(progress)
 
                 with tab4:
-                    # write the blog
-                    st.write("### Draft 1")
-                    start = time.time()
-                    print("heeeeere", type(vectorStore_openAI))
-                    similar_docs = vectorStore_openAI.similarity_search(
-                        f"blog outline: {blog_outline}",
-                        k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
-                    )
+                    with st.spinner("Writing draft 1..."):
+                        # write the blog
+                        st.write("### Draft 1")
+                        start = time.time()
+                        print("heeeeere", type(vectorStore_openAI))
+                        similar_docs = vectorStore_openAI.similarity_search(
+                            f"blog outline: {blog_outline}",
+                            k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
+                        )
 
-                    draft1 = writer_chain.run(
-                        topic=myTopic,
-                        outline=blog_outline,
-                        data=similar_docs,
-                        keywords=keyword_list,
-                        wordCount=myWordCount,
-                    )
-                    end = time.time()
-                    st.write(draft1)
-                    # get the number of words in a string: split on whitespace and end of line characters
-                    draft1_word_count = count_words_with_bullet_points(draft1)
-                    st.write(f"> Draft 1 word count: {draft1_word_count}")
-                    st.write(
-                        f"> Generating the first draft took ({round(end - start, 2)} s)"
-                    )
+                        draft1 = writer_chain.run(
+                            topic=myTopic,
+                            outline=blog_outline,
+                            data=similar_docs,
+                            keywords=keyword_list,
+                            wordCount=myWordCount,
+                        )
+                        end = time.time()
+                        st.write(draft1)
+                        # get the number of words in a string: split on whitespace and end of line characters
+                        draft1_word_count = count_words_with_bullet_points(draft1)
+                        st.write(f"> Draft 1 word count: {draft1_word_count}")
+                        st.write(
+                            f"> Generating the first draft took ({round(end - start, 2)} s)"
+                        )
 
-                    # reference the blog
-                    st.write("### Draft 1 References")
-                    start = time.time()
+                    with st.spinner("Generating draft 1 references..."):
+                        # reference the blog
+                        st.write("### Draft 1 References")
+                        start = time.time()
 
-                    chain = RetrievalQAWithSourcesChain.from_llm(
-                        reference_llm,
-                        retriever=vectorStore_openAI.as_retriever(),
-                    )
-                    print("Chain created.")
+                        chain = RetrievalQAWithSourcesChain.from_llm(
+                            reference_llm,
+                            retriever=vectorStore_openAI.as_retriever(),
+                        )
+                        print("Chain created.")
 
-                    draft1_reference = chain(
-                        {
-                            "question": f"First, Search for each paragraph in the following text {draft1} to get the most relevant source. \ Then, list those sources and order with respect to the order of using them in the blog. The sources could be links or documents"
-                        },
-                        include_run_info=True,
-                    )
-                    end = time.time()
-                    # draft1_reference = reference_agent.run(
-                    #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
-                    # )
-                    st.write(draft1_reference["answer"] + "\n\n")
-                    st.write(draft1_reference["sources"])
-                    st.write(
-                        f"> Generating the first draft reference took ({round(end - start, 2)} s)"
-                    )
-                    st.success("Draft 1 generated successfully")
-                    progress += 0.16667
-                    progress_bar.progress(progress)
+                        draft1_reference = chain(
+                            {
+                                "question": f"First, Search for each paragraph in the following text {draft1} to get the most relevant source. \ Then, list those sources and order with respect to the order of using them in the blog. The sources could be links or documents"
+                            },
+                            include_run_info=True,
+                        )
+                        end = time.time()
+                        # draft1_reference = reference_agent.run(
+                        #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
+                        # )
+                        st.write(draft1_reference["answer"] + "\n\n")
+                        st.write(draft1_reference["sources"])
+                        st.write(
+                            f"> Generating the first draft reference took ({round(end - start, 2)} s)"
+                        )
+                        st.success("Draft 1 generated successfully")
+                        progress += 0.16667
+                        progress_bar.progress(progress)
                 #########################################
                 # evaluation agent
                 # drafts = writer_evaluation_chain(
@@ -532,29 +537,30 @@ def main():
                 #######################################
                 # edit the first draft
                 with tab5:
-                    st.write("### Draft 2")
-                    start = time.time()
-                    draft2 = evaluation_chain.run(
-                        topic=myTopic,
-                        keywords=keyword_list,
-                        wordCount=myWordCount,
-                        summary=similar_docs,
-                        draft=draft1,
-                        sources=draft1_reference["sources"]
-                        + draft1_reference["answer"]
-                        + str([doc.metadata["source"] for doc in similar_docs]),
-                    )
-                    end = time.time()
-                    st.write(draft2)
-                    # get the number of words in a string: split on whitespace and end of line characters
-                    draft2_word_count = count_words_with_bullet_points(draft2)
-                    st.write(f"> Draft 2 word count: {draft2_word_count}")
-                    st.write(
-                        f"> Editing the first draft took ({round(end - start, 2)} s)"
-                    )
-                    st.success("Draft 2 generated successfully")
-                    progress += 0.16667
-                    progress_bar.progress(progress)
+                    with st.spinner("Writing the second draft..."):
+                        st.write("### Draft 2")
+                        start = time.time()
+                        draft2 = evaluation_chain.run(
+                            topic=myTopic,
+                            keywords=keyword_list,
+                            wordCount=myWordCount,
+                            summary=similar_docs,
+                            draft=draft1,
+                            sources=draft1_reference["sources"]
+                            + draft1_reference["answer"]
+                            + str([doc.metadata["source"] for doc in similar_docs]),
+                        )
+                        end = time.time()
+                        st.write(draft2)
+                        # get the number of words in a string: split on whitespace and end of line characters
+                        draft2_word_count = count_words_with_bullet_points(draft2)
+                        st.write(f"> Draft 2 word count: {draft2_word_count}")
+                        st.write(
+                            f"> Editing the first draft took ({round(end - start, 2)} s)"
+                        )
+                        st.success("Draft 2 generated successfully")
+                        progress += 0.16667
+                        progress_bar.progress(progress)
                 #########################################
                 # draft2 reference
                 # st.write("### Draft 2 References")
@@ -575,29 +581,30 @@ def main():
                 #########################################
                 # edit the second draft
                 with tab6:
-                    # write the blog
-                    st.write("### Final Blog")
-                    start = time.time()
-                    blog = evaluation_chain.run(
-                        topic=myTopic,
-                        keywords=keyword_list,
-                        wordCount=myWordCount,
-                        summary=similar_docs,
-                        draft=draft1,
-                        sources=draft1_reference["sources"]
-                        + draft1_reference["answer"]
-                        + str([doc.metadata["source"] for doc in similar_docs]),
-                    )
-                    end = time.time()
-                    st.write(blog)
-                    # get the number of words in a string: split on whitespace and end of line characters
-                    blog_word_count = count_words_with_bullet_points(blog)
-                    st.write(f"> Blog word count: {blog_word_count}")
-                    st.write(f"> Generating the blog took ({round(end - start, 2)} s)")
-                    st.success("Blog generated successfully")
-                    progress = 1.0
-                    progress_bar.progress(progress)
-                    st.balloons()
+                    with st.spinner("Writing the final draft..."):
+                        # write the blog
+                        st.write("### Final Blog")
+                        start = time.time()
+                        blog = evaluation_chain.run(
+                            topic=myTopic,
+                            keywords=keyword_list,
+                            wordCount=myWordCount,
+                            summary=similar_docs,
+                            draft=draft1,
+                            sources=draft1_reference["sources"]
+                            + draft1_reference["answer"]
+                            + str([doc.metadata["source"] for doc in similar_docs]),
+                        )
+                        end = time.time()
+                        st.write(blog)
+                        # get the number of words in a string: split on whitespace and end of line characters
+                        blog_word_count = count_words_with_bullet_points(blog)
+                        st.write(f"> Blog word count: {blog_word_count}")
+                        st.write(f"> Generating the blog took ({round(end - start, 2)} s)")
+                        st.success("Blog generated successfully")
+                        progress = 1.0
+                        progress_bar.progress(progress)
+                        st.balloons()
                     # st.snow()
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy the blog to clipboard", key="copy1")
