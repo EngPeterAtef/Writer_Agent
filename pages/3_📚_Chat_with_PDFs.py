@@ -640,7 +640,7 @@ def main():
                     progress =1.0
                     progress_bar.progress(progress)
                     st.balloons()
-                    st.snow()
+                    #st.snow()
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy the blog to clipboard", key="copy1")
                 # if copy_btn:

@@ -34,6 +34,7 @@ from constants import (
     PINECONE_API_ENV,
 )
 
+
 def count_words_with_bullet_points(input_string):
     bullet_points = [
         "*",
@@ -285,11 +286,11 @@ def main():
                 st.session_state.links = [myLink]
             elif myLink not in st.session_state.links:
                 st.session_state.links += [myLink]
-            
+
         if "links" in st.session_state:
             temp = st.session_state.links
             for i in range(len(temp)):
-                st.write(f'{i+1}. {temp[i]}')
+                st.write(f"{i+1}. {temp[i]}")
         if st.button("clear links", key="clear"):
             st.session_state.links = []
         myWordCount = st.number_input(
@@ -299,17 +300,26 @@ def main():
         st.write("##### Current Progress")
         progress = 0
         progress_bar = st.progress(progress)
-        keyword_list = ''
-        title = ''
-        subtitle = ''
-        blog_outline = ''
-        draft1 = ''
+        keyword_list = ""
+        title = ""
+        subtitle = ""
+        blog_outline = ""
+        draft1 = ""
         draft1_reference = None
-        draft2 = ''
+        draft2 = ""
         inserted_links = []
         if goBtn:
             try:
-                tab1, tab2, tab3,tab4, tab5, tab6 = st.tabs(["Keywords list","Title and Subtitle", "Blog Outline","Draft 1","Draft 2","Final Blog"])
+                tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+                    [
+                        "Keywords list",
+                        "Title and Subtitle",
+                        "Blog Outline",
+                        "Draft 1",
+                        "Draft 2",
+                        "Final Blog",
+                    ]
+                )
                 with tab1:
                     st.write("### Keywords list")
                     start = time.time()
@@ -319,8 +329,10 @@ def main():
                     end = time.time()
                     # show the keywords list to the user
                     st.write(keyword_list)
-                    st.write(f"> Generating the keyword took ({round(end - start, 2)} s)")
-                    progress+=0.16667
+                    st.write(
+                        f"> Generating the keyword took ({round(end - start, 2)} s)"
+                    )
+                    progress += 0.16667
                     progress_bar.progress(progress)
                 # Getting Title and SubTitle
                 with tab2:
@@ -339,15 +351,14 @@ def main():
                     st.write(
                         f"> Generating the title and subtitle took ({round(end - start, 2)} s)"
                     )
-                    progress+=0.16667
+                    progress += 0.16667
                     progress_bar.progress(progress)
 
                 # Getting the search results
 
                 if "links" in st.session_state:
                     inserted_links = st.session_state.links
-                    
-                        
+
                 print(inserted_links)
                 print(type(inserted_links))
                 loaders = UnstructuredURLLoader(urls=inserted_links)
@@ -363,7 +374,7 @@ def main():
                 num_docs = len(data_docs)
                 similar_docs = vectorStore_openAI.similarity_search(
                     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                    k=int(0.1 * num_docs) if int(0.1 * num_docs)<28 else 28,
+                    k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
                 )
 
                 # write the blog outline
@@ -385,9 +396,8 @@ def main():
                     st.write(
                         f"> Generating the first Blog Outline took ({round(end - start, 2)} s)"
                     )
-                    progress+=0.16667
+                    progress += 0.16667
                     progress_bar.progress(progress)
-
 
                 # write the blog
                 with tab4:
@@ -396,7 +406,7 @@ def main():
 
                     similar_docs = vectorStore_openAI.similarity_search(
                         f"blog outline: {blog_outline}",
-                        k=int(0.1 * num_docs) if int(0.1 * num_docs)<28 else 28,
+                        k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
                     )
 
                     draft1 = writer_chain.run(
@@ -438,12 +448,12 @@ def main():
                         include_run_info=True,
                     )
                     end = time.time()
-                    st.write(draft1_reference["answer"] + '\n\n')
+                    st.write(draft1_reference["answer"] + "\n\n")
                     st.write(draft1_reference["sources"])
                     st.write(
                         f"> Generating the first draft reference took ({round(end - start, 2)} s)"
                     )
-                    progress+=0.16667
+                    progress += 0.16667
                     progress_bar.progress(progress)
                 #########################################
                 # evaluation agent
@@ -466,9 +476,11 @@ def main():
                     # get the number of words in a string: split on whitespace and end of line characters
                     draft2_word_count = count_words_with_bullet_points(draft2)
                     st.write(f"> Draft 2 word count: {draft2_word_count}")
-                    st.write(f"> Editing the first draft took ({round(end - start, 2)} s)")
+                    st.write(
+                        f"> Editing the first draft took ({round(end - start, 2)} s)"
+                    )
                     st.success("Draft 2 generated successfully")
-                    progress+=0.16667
+                    progress += 0.16667
                     progress_bar.progress(progress)
                 #########################################
                 #########################################
@@ -494,10 +506,10 @@ def main():
                     st.write(f"> Blog word count: {blog_word_count}")
                     st.write(f"> Generating the blog took ({round(end - start, 2)} s)")
                     st.success("Blog generated successfully")
-                    progress =1.0
+                    progress = 1.0
                     progress_bar.progress(progress)
                     st.balloons()
-                    st.snow()
+                    # st.snow()
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy the blog to clipboard", key="copy1")
                 # if copy_btn:

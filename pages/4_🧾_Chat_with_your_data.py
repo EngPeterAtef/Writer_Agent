@@ -35,6 +35,7 @@ from constants import (
 
 # import pyperclip
 from PyPDF2 import PdfReader
+
 # from langchain.vectorstores import Pinecone
 # import pinecone
 
@@ -61,7 +62,6 @@ def main():
 
     st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
     st.title("Blog Writer Agent: Write a blog about any topic 💬")
-
 
     #     st.write("Please enter your OPENAI API KEY")
     #     OPENAI_API_KEY = st.text_input("OPENAI API KEY", type="password")
@@ -301,7 +301,7 @@ def main():
         if "links" in st.session_state:
             temp = st.session_state.links
             for i in range(len(temp)):
-                st.write(f'{i+1}. {temp[i]}')
+                st.write(f"{i+1}. {temp[i]}")
         # upload documents feature
         uploaded_docs = []
         uploaded_files = st.file_uploader(
@@ -344,16 +344,25 @@ def main():
         st.write("##### Current Progress")
         progress = 0
         progress_bar = st.progress(progress)
-        keyword_list = ''
-        title = ''
-        subtitle = ''
-        blog_outline = ''
-        draft1 = ''
+        keyword_list = ""
+        title = ""
+        subtitle = ""
+        blog_outline = ""
+        draft1 = ""
         draft1_reference = None
-        draft2 = ''
+        draft2 = ""
         if goBtn:
             try:
-                tab1, tab2, tab3,tab4, tab5, tab6 = st.tabs(["Keywords list","Title and Subtitle", "Blog Outline","Draft 1","Draft 2","Final Blog"])
+                tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+                    [
+                        "Keywords list",
+                        "Title and Subtitle",
+                        "Blog Outline",
+                        "Draft 1",
+                        "Draft 2",
+                        "Final Blog",
+                    ]
+                )
 
                 with tab1:
                     st.write("### Keywords list")
@@ -364,8 +373,10 @@ def main():
                     end = time.time()
                     # show the keywords list to the user
                     st.write(keyword_list)
-                    st.write(f"> Generating the keyword took ({round(end - start, 2)} s)")
-                    progress+=0.16667
+                    st.write(
+                        f"> Generating the keyword took ({round(end - start, 2)} s)"
+                    )
+                    progress += 0.16667
                     progress_bar.progress(progress)
                 with tab2:
                     # Getting Title and SubTitle
@@ -384,7 +395,7 @@ def main():
                     st.write(
                         f"> Generating the title and subtitle took ({round(end - start, 2)} s)"
                     )
-                    progress+=0.16667
+                    progress += 0.16667
                     progress_bar.progress(progress)
 
                 with tab3:
@@ -442,14 +453,14 @@ def main():
                         f"> Generating the first Blog Outline took ({round(end - start, 2)} s)"
                     )
                     st.success("Blog Outline generated successfully")
-                    progress+=0.16667
+                    progress += 0.16667
                     progress_bar.progress(progress)
 
                 with tab4:
                     # write the blog
                     st.write("### Draft 1")
                     start = time.time()
-                    print("heeeeere",type(vectorStore_openAI))
+                    print("heeeeere", type(vectorStore_openAI))
                     similar_docs = vectorStore_openAI.similarity_search(
                         f"blog outline: {blog_outline}",
                         k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
@@ -497,7 +508,7 @@ def main():
                         f"> Generating the first draft reference took ({round(end - start, 2)} s)"
                     )
                     st.success("Draft 1 generated successfully")
-                    progress+=0.16667
+                    progress += 0.16667
                     progress_bar.progress(progress)
                 #########################################
                 # evaluation agent
@@ -538,9 +549,11 @@ def main():
                     # get the number of words in a string: split on whitespace and end of line characters
                     draft2_word_count = count_words_with_bullet_points(draft2)
                     st.write(f"> Draft 2 word count: {draft2_word_count}")
-                    st.write(f"> Editing the first draft took ({round(end - start, 2)} s)")
+                    st.write(
+                        f"> Editing the first draft took ({round(end - start, 2)} s)"
+                    )
                     st.success("Draft 2 generated successfully")
-                    progress+=0.16667
+                    progress += 0.16667
                     progress_bar.progress(progress)
                 #########################################
                 # draft2 reference
@@ -585,7 +598,7 @@ def main():
                     progress = 1.0
                     progress_bar.progress(progress)
                     st.balloons()
-                    st.snow()
+                    # st.snow()
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy the blog to clipboard", key="copy1")
                 # if copy_btn:

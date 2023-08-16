@@ -404,7 +404,6 @@ def main():
         st.markdown("""- DuckDuckGo Search Engine API""")
         st.markdown("""- Uploading PDF documents""")
 
-
         myTopic = st.text_input("Write a blog about: ", key="query")
         # upload documents feature
         uploaded_docs = []
@@ -449,25 +448,36 @@ def main():
         st.write("##### Current Progress")
         progress = 0
         progress_bar = st.progress(progress)
-        keyword_list = ''
-        title = ''
-        subtitle = ''
-        google_results= ''
-        google_webpages1 = ''
-        google_webpages2 = ''
-        duck_results = ''
-        wiki_query_results = ''
-        google_summary= ''
-        duck_summary = ''
-        tot_summary = ''
-        tot_summary2 = ''
-        blog_outline = ''
-        draft1 = ''
+        keyword_list = ""
+        title = ""
+        subtitle = ""
+        google_results = ""
+        google_webpages1 = ""
+        google_webpages2 = ""
+        duck_results = ""
+        wiki_query_results = ""
+        google_summary = ""
+        duck_summary = ""
+        tot_summary = ""
+        tot_summary2 = ""
+        blog_outline = ""
+        draft1 = ""
         draft1_reference = None
-        draft2 = ''
+        draft2 = ""
         if goBtn:
             try:
-                tab1, tab2, tab3,tab4, tab5, tab6,tab7, tab8 = st.tabs(["Keywords list","Title and Subtitle", "Search Results", "Summary","Blog Outline","Draft 1","Draft 2","Final Blog"])
+                tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
+                    [
+                        "Keywords list",
+                        "Title and Subtitle",
+                        "Search Results",
+                        "Summary",
+                        "Blog Outline",
+                        "Draft 1",
+                        "Draft 2",
+                        "Final Blog",
+                    ]
+                )
                 with tab1:
                     st.write("### Keywords list")
                     start = time.time()
@@ -477,12 +487,14 @@ def main():
                     end = time.time()
                     # show the keywords list to the user
                     st.write(keyword_list)
-                    st.write(f"> Generating the keyword took ({round(end - start, 2)} s)")
-                    progress+=0.125
+                    st.write(
+                        f"> Generating the keyword took ({round(end - start, 2)} s)"
+                    )
+                    progress += 0.125
                     progress_bar.progress(progress)
 
                 with tab2:
-                # Getting Title and SubTitle
+                    # Getting Title and SubTitle
                     st.write("### Title")
                     start = time.time()
                     title = self_ask_with_search.run(
@@ -498,7 +510,7 @@ def main():
                     st.write(
                         f"> Generating the title and subtitle took ({round(end - start, 2)} s)"
                     )
-                    progress+=0.125
+                    progress += 0.125
                     progress_bar.progress(progress)
                 with tab3:
                     # Getting the search results
@@ -532,7 +544,7 @@ def main():
                     st.write(
                         f"> Generating the search results took ({round(end - start, 2)} s)"
                     )
-                    progress+=0.125
+                    progress += 0.125
                     progress_bar.progress(progress)
 
                 with tab4:
@@ -558,7 +570,9 @@ def main():
                     st.write(tot_summary)
                     st.write(tot_summary2)
                     end = time.time()
-                    st.write(f"> Generating the summaries took ({round(end - start, 2)} s)")
+                    st.write(
+                        f"> Generating the summaries took ({round(end - start, 2)} s)"
+                    )
                     links = []
                     for i in range(len(google_webpages1)):
                         links.append(google_webpages1[i]["link"])
@@ -566,7 +580,7 @@ def main():
                     for i in range(len(google_webpages2)):
                         links.append(google_webpages2[i]["link"])
 
-                    progress+=0.125
+                    progress += 0.125
                     progress_bar.progress(progress)
 
                 with tab5:
@@ -623,7 +637,7 @@ def main():
                     st.write(
                         f"> Generating the first Blog Outline took ({round(end - start, 2)} s)"
                     )
-                    progress+=0.125
+                    progress += 0.125
                     progress_bar.progress(progress)
 
                 with tab6:
@@ -680,7 +694,7 @@ def main():
                     st.write(
                         f"> Generating the first draft reference took ({round(end - start, 2)} s)"
                     )
-                    progress+=0.125
+                    progress += 0.125
                     progress_bar.progress(progress)
                 #########################################
                 # evaluation agent
@@ -721,9 +735,11 @@ def main():
                     # get the number of words in a string: split on whitespace and end of line characters
                     draft2_word_count = count_words_with_bullet_points(draft2)
                     st.write(f"> Draft 2 word count: {draft2_word_count}")
-                    st.write(f"> Editing the first draft took ({round(end - start, 2)} s)")
+                    st.write(
+                        f"> Editing the first draft took ({round(end - start, 2)} s)"
+                    )
                     st.success("Draft 2 generated successfully")
-                    progress+=0.125
+                    progress += 0.125
                     progress_bar.progress(progress)
                 #########################################
                 # draft2 reference
@@ -765,10 +781,10 @@ def main():
                     st.write(f"> Blog word count: {blog_word_count}")
                     st.write(f"> Generating the blog took ({round(end - start, 2)} s)")
                     st.success("Blog generated successfully")
-                    progress+=0.125
+                    progress += 0.125
                     progress_bar.progress(progress)
                     st.balloons()
-                    st.snow()
+                    # st.snow()
 
                 #########################################
                 # get the cost per operation
