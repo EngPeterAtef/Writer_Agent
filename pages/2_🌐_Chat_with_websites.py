@@ -324,6 +324,7 @@ def main():
                     progress_bar.progress(progress)
                 # Getting Title and SubTitle
                 with tab2:
+                    st.write("### Title")
                     start = time.time()
                     title = self_ask_with_search.run(
                         f"Suggest a titel for a blog about {myTopic} using the following keywords {keyword_list}?",
@@ -332,7 +333,6 @@ def main():
                         f"Suggest a suitable subtitle for a blog about {myTopic} for the a blog with a title {title} using the following keywords {keyword_list}?",
                     )
                     end = time.time()
-                    st.write("### Title")
                     st.write(title)
                     st.write("### Subtitle")
                     st.write(subtitle)

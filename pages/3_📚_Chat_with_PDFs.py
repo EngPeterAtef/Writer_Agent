@@ -436,6 +436,7 @@ def main():
                     progress_bar.progress(progress)
                 with tab2:
                     # Getting Title and SubTitle
+                    st.write("### Title")
                     start = time.time()
                     title = self_ask_with_search.run(
                         f"Suggest a titel for a blog about {myTopic} using the following keywords {keyword_list}?",
@@ -444,7 +445,6 @@ def main():
                         f"Suggest a suitable subtitle for a blog about {myTopic} for the a blog with a title {title} using the following keywords {keyword_list}?",
                     )
                     end = time.time()
-                    st.write("### Title")
                     st.write(title)
                     st.write("### Subtitle")
                     st.write(subtitle)
@@ -454,17 +454,6 @@ def main():
                     progress+=0.16667
                     progress_bar.progress(progress)
                 
-                start = time.time()
-                if "uploaded_docs" in st.session_state:
-                    uploaded_docs = st.session_state.uploaded_docs
-                else:
-                    uploaded_docs = []
-                print("uploaded_docs: ", len(uploaded_docs))
-                print("Creating vector store...")
-                vectorStore_openAI = FAISS.from_documents(
-                    uploaded_docs, embedding=embeddings
-                )
-                print("Vector store created.")
 
                 # with open("faiss_store_openai.pkl", "wb") as f:
                 #     pickle.dump(vectorStore_openAI, f)
@@ -474,6 +463,17 @@ def main():
                 with tab3:
                     # write the blog outline
                     st.write("### Blog Outline")
+                    start = time.time()
+                    if "uploaded_docs" in st.session_state:
+                        uploaded_docs = st.session_state.uploaded_docs
+                    else:
+                        uploaded_docs = []
+                    print("uploaded_docs: ", len(uploaded_docs))
+                    print("Creating vector store...")
+                    vectorStore_openAI = FAISS.from_documents(
+                        uploaded_docs, embedding=embeddings
+                    )
+                    print("Vector store created.")
                     num_docs = len(uploaded_docs)
                     similar_docs = vectorStore_openAI.similarity_search(
                         f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
@@ -501,7 +501,7 @@ def main():
                     # write the blog
                     st.write("### Draft 1")
                     start = time.time()
-
+                    print("heeeeere",type(vectorStore_openAI))
                     similar_docs = vectorStore_openAI.similarity_search(
                         f"blog outline: {blog_outline}",
                         k=10,
