@@ -460,8 +460,8 @@ def main():
                 end = time.time()
                 st.write(blog_outline)
                 # get the number of words in a string: split on whitespace and end of line characters
-                blog_outline_word_count = count_words_with_bullet_points(blog_outline)
-                st.write(f"> Blog Outline Word count: {blog_outline_word_count}")
+                # blog_outline_word_count = count_words_with_bullet_points(blog_outline)
+                # st.write(f"> Blog Outline Word count: {blog_outline_word_count}")
                 st.write(
                     f"> Generating the first Blog Outline took ({round(end - start, 2)} s)"
                 )
