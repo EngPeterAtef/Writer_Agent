@@ -403,8 +403,25 @@ def main():
         st.markdown("""- Wikipedia API""")
         st.markdown("""- DuckDuckGo Search Engine API""")
         st.markdown("""- Uploading PDF documents""")
+        st.markdown("""- Inserted Websites""")
 
         myTopic = st.text_input("Write a blog about: ", key="query")
+        # take input link
+        myLink = st.text_input("Related Websites ", key="link")
+        st.write("##### Links")
+        if myLink:
+            if "links" not in st.session_state:
+                st.session_state.links = [myLink]
+            elif myLink not in st.session_state.links:
+                st.session_state.links += [myLink]
+
+        if "links" in st.session_state:
+            temp = st.session_state.links
+            for i in range(len(temp)):
+                st.write(f"{i+1}. {temp[i]}")
+        if st.button("clear links", key="clear"):
+            st.session_state.links = []
+        
         # upload documents feature
         uploaded_docs = []
         uploaded_files = st.file_uploader(
@@ -464,6 +481,8 @@ def main():
         draft1 = ""
         draft1_reference = None
         draft2 = ""
+        inserted_links = []
+
         if goBtn:
             try:
                 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
@@ -526,7 +545,9 @@ def main():
                         )
                         google_webpages2 = google.results(myTopic, 10)
                         st.write("#### Google Search Results")
-                        st.write(google_results[0 : len(google_results) // 2] + ".........")
+                        st.write(
+                            google_results[0 : len(google_results) // 2] + "........."
+                        )
                         duck_results = duck.run(myTopic)
                         st.write("#### DuckDuckGo Search Results")
                         st.write(duck_results[0 : len(duck_results) // 2] + ".........")
@@ -591,10 +612,11 @@ def main():
                 with tab5:
                     with st.spinner("Generating the blog outline..."):
                         # write the blog outline
-                        st.write("### Blog Outline")
                         start = time.time()
+                        if "links" in st.session_state:
+                            inserted_links = st.session_state.links
 
-                        loaders = UnstructuredURLLoader(urls=links)
+                        loaders = UnstructuredURLLoader(urls=links + inserted_links)
                         print("Loading data...")
                         data = loaders.load()
                         print("Data loaded.")
@@ -606,6 +628,7 @@ def main():
                         else:
                             uploaded_docs = []
 
+                        st.write("### Blog Outline")
                         print("uploaded documents: ", len(uploaded_docs))
                         print("websites documents: ", len(data_docs))
                         vectorStore_openAI = FAISS.from_documents(
@@ -615,7 +638,8 @@ def main():
                         num_docs = len(data_docs + uploaded_docs)
                         similar_docs = vectorStore_openAI.similarity_search(
                             f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                            k=int(0.1 * num_docs) if (int(0.1 * num_docs) < 28) else 28,
+                            k=10,
+                            # k=int(0.1 * num_docs) if (int(0.1 * num_docs) < 28) else 28,
                         )
                         # with open("faiss_store_openai.pkl", "wb") as f:
                         #     pickle.dump(vectorStore_openAI, f)
@@ -654,7 +678,8 @@ def main():
 
                         similar_docs = vectorStore_openAI.similarity_search(
                             f"blog outline: {blog_outline}",
-                            k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
+                            k=10,
+                            # k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
                         )
                         draft1 = writer_chain.run(
                             topic=myTopic,
@@ -676,7 +701,7 @@ def main():
                         )
 
                         st.success("Draft 1 generated successfully")
-                        
+
                     with st.spinner("Generating the references..."):
                         # reference the blog
                         st.write("### Draft 1 References")
@@ -790,7 +815,9 @@ def main():
                         # get the number of words in a string: split on whitespace and end of line characters
                         blog_word_count = count_words_with_bullet_points(blog)
                         st.write(f"> Blog word count: {blog_word_count}")
-                        st.write(f"> Generating the blog took ({round(end - start, 2)} s)")
+                        st.write(
+                            f"> Generating the blog took ({round(end - start, 2)} s)"
+                        )
                         st.success("Blog generated successfully")
                         progress += 0.125
                         progress_bar.progress(progress)
