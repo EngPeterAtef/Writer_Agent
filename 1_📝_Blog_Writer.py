@@ -889,7 +889,7 @@ def main():
                         # word count
                         st.write(f"> Draft 1 word count: {count_words_with_bullet_points(st.session_state.draft1_1)}")
                         st.write("### Draft 1 References")
-                        st.write(st.session_state.draft1_reference1_1['answer'])
+                        st.write(st.session_state.draft1_reference1_1['answer'] + "\n\n")
                         st.write(st.session_state.draft1_reference1_1['sources'])
                         progress += 0.125
                         progress_bar.progress(progress)

@@ -329,7 +329,7 @@ def main():
                             f"Search about {myTopic} and use the results to get the important keywords related to {myTopic} to help to write a blog about {myTopic}."
                         )
                         end = time.time()
-                        st.session_state.keyword_list_2 = keyword_list
+                        st.session_state.keywords_list_2 = keyword_list
                         # show the keywords list to the user
                         st.write(keyword_list)
                         st.write(
@@ -544,14 +544,47 @@ def main():
                         progress_bar.progress(progress)
                 
                 with tab2:
-                    if st.session_state['title_1'] is not None:
+                    if st.session_state['title_2'] is not None:
                         st.write("### Title")
-                        st.write(st.session_state['title_1'])
+                        st.write(st.session_state['title_2'])
+                        st.write("### Subtitle")
+                        st.write(st.session_state.subtitle_2)
                         progress += 0.16667
                         progress_bar.progress(progress)
-                        
+
+                with tab3:
+                    if st.session_state.blog_outline_2 is not None:
+                        st.write("### Blog Outline")
+                        st.write(st.session_state.blog_outline_2)
+                        progress += 0.16667
+                        progress_bar.progress(progress)
+                
+                with tab4:
+                    if st.session_state.draft1_2 is not None:
+                        st.write("### Draft 1")
+                        st.write(st.session_state.draft1_2)
+                        st.write("### Draft 1 References")
+                        st.write(st.session_state.draft1_reference_2["answer"] + "\n\n")
+                        st.write(st.session_state.draft1_reference_2["sources"])
+                        progress += 0.16667
+                        progress_bar.progress(progress)
+
+                with tab5:
+                    if st.session_state.draft2_2 is not None:
+                        st.write("### Draft 2")
+                        st.write(st.session_state.draft2_2)
+                        progress += 0.16667
+                        progress_bar.progress(progress)
+                
+                with tab6:
+                    if st.session_state.blog_2 is not None:
+                        st.write("### Final Blog")
+                        st.write(st.session_state.blog_2)
+                        progress = 1.0
+                        progress_bar.progress(progress)
+                        st.balloons()
             except Exception as e:
-                st.error(e)
+                print(e)
 if __name__ == "__main__":
     with get_openai_callback() as cb:
         main()
