@@ -63,7 +63,8 @@ def main():
 
         st.write("Please enter your OPENAI API KEY")
         OPENAI_API_KEY = st.text_input("OPENAI API KEY", type="password")
-
+        if OPENAI_API_KEY:
+            keys_flag = True
     #     st.write("Please enter your Google API KEY")
     #     GOOGLE_API_KEY = st.text_input("GOOGLE API KEY", type="password")
 
@@ -79,7 +80,6 @@ def main():
     #         # warning message
     #         st.warning("Please enter your API KEY first", icon="⚠")
     #         keys_flag = False
-        keys_flag = True
     if keys_flag:
         os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
         os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
@@ -719,7 +719,8 @@ def main():
                         st.balloons()
             except Exception as e:
                 print(e)
-
+    else:
+        st.warning("Please enter your API KEY first", icon="⚠")
 if __name__ == "__main__":
     with get_openai_callback() as cb:
         main()
