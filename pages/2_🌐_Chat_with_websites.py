@@ -590,6 +590,6 @@ def main():
 
 
 if __name__ == "__main__":
-    # with get_openai_callback() as cb:
-    main()
-    # print(cb)
+    with get_openai_callback() as cb:
+        main()
+    print(cb)
