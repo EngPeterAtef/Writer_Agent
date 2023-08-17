@@ -54,7 +54,7 @@ def count_words_with_bullet_points(input_string):
 
 
 def main():
-    load_dotenv()
+    # load_dotenv()
     keys_flag = False
 
     st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
@@ -64,7 +64,7 @@ def main():
 
         st.write("Please enter your OPENAI API KEY")
         OPENAI_API_KEY = st.text_input("OPENAI API KEY", type="password")
-        if OPENAI_API_KEY:
+        if OPENAI_API_KEY != "":
             keys_flag = True
 
     #     st.write("Please enter your Google API KEY")
@@ -422,7 +422,7 @@ def main():
                 st.write(f"{i+1}. {temp[i]}")
         if st.button("clear links", key="clear"):
             st.session_state.links = []
-        
+
         # upload documents feature
         uploaded_docs = []
         uploaded_files = st.file_uploader(
@@ -825,7 +825,7 @@ def main():
             try:
                 print("not pressed")
                 with tab1:
-                    if st.session_state['keywords_list_1'] is not None:
+                    if st.session_state["keywords_list_1"] is not None:
                         st.write("### Keywords list")
                         st.write(st.session_state.keywords_list_1)
                         progress += 0.125
@@ -888,10 +888,14 @@ def main():
                         st.write("### Draft 1")
                         st.write(st.session_state.draft1_1)
                         # word count
-                        st.write(f"> Draft 1 word count: {count_words_with_bullet_points(st.session_state.draft1_1)}")
+                        st.write(
+                            f"> Draft 1 word count: {count_words_with_bullet_points(st.session_state.draft1_1)}"
+                        )
                         st.write("### Draft 1 References")
-                        st.write(st.session_state.draft1_reference1_1['answer'] + "\n\n")
-                        st.write(st.session_state.draft1_reference1_1['sources'])
+                        st.write(
+                            st.session_state.draft1_reference1_1["answer"] + "\n\n"
+                        )
+                        st.write(st.session_state.draft1_reference1_1["sources"])
                         progress += 0.125
                         progress_bar.progress(progress)
                 with tab7:
@@ -899,7 +903,9 @@ def main():
                         st.write("### Draft 2")
                         st.write(st.session_state.draft2_1)
                         # word count
-                        st.write(f"> Draft 2 word count: {count_words_with_bullet_points(st.session_state.draft2_1)}")
+                        st.write(
+                            f"> Draft 2 word count: {count_words_with_bullet_points(st.session_state.draft2_1)}"
+                        )
                         progress += 0.125
                         progress_bar.progress(progress)
                 with tab8:
@@ -907,7 +913,9 @@ def main():
                         st.write("### Final Blog")
                         st.write(st.session_state.blog_1)
                         # word count
-                        st.write(f"> Blog word count: {count_words_with_bullet_points(st.session_state.blog_1)}")
+                        st.write(
+                            f"> Blog word count: {count_words_with_bullet_points(st.session_state.blog_1)}"
+                        )
                         progress += 0.125
                         progress_bar.progress(progress)
                         st.balloons()
@@ -915,6 +923,7 @@ def main():
                 print(e)
     else:
         st.warning("Please enter your API KEY first", icon="⚠")
+
 
 if __name__ == "__main__":
     with get_openai_callback() as cb:

@@ -36,6 +36,7 @@ from constants import (
     PINECONE_API_ENV,
 )
 
+
 def count_words_with_bullet_points(input_string: str):
     bullet_points = [
         "*",
@@ -53,7 +54,7 @@ def count_words_with_bullet_points(input_string: str):
 
 
 def main():
-    load_dotenv()
+    # load_dotenv()
     keys_flag = False
 
     st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
@@ -63,7 +64,7 @@ def main():
 
         st.write("Please enter your OPENAI API KEY")
         OPENAI_API_KEY = st.text_input("OPENAI API KEY", type="password")
-        if OPENAI_API_KEY:
+        if OPENAI_API_KEY != '':
             keys_flag = True
     #     st.write("Please enter your Google API KEY")
     #     GOOGLE_API_KEY = st.text_input("GOOGLE API KEY", type="password")
@@ -412,14 +413,23 @@ def main():
         st.write("##### Current Progress")
         progress = 0
         progress_bar = st.progress(progress)
-        keyword_list = ''
-        title = ''
-        subtitle = ''
-        blog_outline = ''
-        draft1 = ''
+        keyword_list = ""
+        title = ""
+        subtitle = ""
+        blog_outline = ""
+        draft1 = ""
         draft1_reference = None
-        draft2 = ''
-        tab1, tab2, tab3,tab4, tab5, tab6 = st.tabs(["Keywords list","Title and Subtitle", "Blog Outline","Draft 1","Draft 2","Final Blog"])
+        draft2 = ""
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+            [
+                "Keywords list",
+                "Title and Subtitle",
+                "Blog Outline",
+                "Draft 1",
+                "Draft 2",
+                "Final Blog",
+            ]
+        )
         if goBtn:
             try:
                 with tab1:
@@ -433,8 +443,10 @@ def main():
                         st.session_state.keywords_list_3 = keyword_list
                         # show the keywords list to the user
                         st.write(keyword_list)
-                        st.write(f"> Generating the keyword took ({round(end - start, 2)} s)")
-                        progress+=0.16667
+                        st.write(
+                            f"> Generating the keyword took ({round(end - start, 2)} s)"
+                        )
+                        progress += 0.16667
                         progress_bar.progress(progress)
                 with tab2:
                     with st.spinner("Generating the title and subtitle..."):
@@ -456,9 +468,8 @@ def main():
                         st.write(
                             f"> Generating the title and subtitle took ({round(end - start, 2)} s)"
                         )
-                        progress+=0.16667
+                        progress += 0.16667
                         progress_bar.progress(progress)
-                    
 
                 # with open("faiss_store_openai.pkl", "wb") as f:
                 #     pickle.dump(vectorStore_openAI, f)
@@ -503,7 +514,7 @@ def main():
                         st.write(
                             f"> Generating the first Blog Outline took ({round(end - start, 2)} s)"
                         )
-                        progress+=0.16667
+                        progress += 0.16667
                         progress_bar.progress(progress)
 
                 with tab4:
@@ -511,7 +522,7 @@ def main():
                         # write the blog
                         st.write("### Draft 1")
                         start = time.time()
-                        print("heeeeere",type(vectorStore_openAI))
+                        print("heeeeere", type(vectorStore_openAI))
                         similar_docs = vectorStore_openAI.similarity_search(
                             f"blog outline: {blog_outline}",
                             k=10,
@@ -566,7 +577,7 @@ def main():
                         st.write(
                             f"> Generating the first draft reference took ({round(end - start, 2)} s)"
                         )
-                        progress+=0.16667
+                        progress += 0.16667
                         progress_bar.progress(progress)
                 #########################################
                 # evaluation agent
@@ -609,9 +620,11 @@ def main():
                         # get the number of words in a string: split on whitespace and end of line characters
                         draft2_word_count = count_words_with_bullet_points(draft2)
                         st.write(f"> Draft 2 word count: {draft2_word_count}")
-                        st.write(f"> Editing the first draft took ({round(end - start, 2)} s)")
+                        st.write(
+                            f"> Editing the first draft took ({round(end - start, 2)} s)"
+                        )
                         st.success("Draft 2 generated successfully")
-                        progress+=0.16667
+                        progress += 0.16667
                         progress_bar.progress(progress)
                 #########################################
                 # draft2 reference
@@ -653,12 +666,14 @@ def main():
                         # get the number of words in a string: split on whitespace and end of line characters
                         blog_word_count = count_words_with_bullet_points(blog)
                         st.write(f"> Blog word count: {blog_word_count}")
-                        st.write(f"> Generating the blog took ({round(end - start, 2)} s)")
+                        st.write(
+                            f"> Generating the blog took ({round(end - start, 2)} s)"
+                        )
                         st.success("Blog generated successfully")
-                        progress =1.0
+                        progress = 1.0
                         progress_bar.progress(progress)
                         st.balloons()
-                    #st.snow()
+                    # st.snow()
                 # add copy button to copy the draft to the clipboard
                 # copy_btn = st.button("Copy the blog to clipboard", key="copy1")
                 # if copy_btn:
@@ -671,16 +686,16 @@ def main():
             try:
                 print("not pressed")
                 with tab1:
-                    if st.session_state['keywords_list_3'] is not None:
+                    if st.session_state["keywords_list_3"] is not None:
                         st.write("### Keywords list")
-                        st.write(st.session_state['keywords_list_3'])
+                        st.write(st.session_state["keywords_list_3"])
                         progress += 0.16667
                         progress_bar.progress(progress)
-                
+
                 with tab2:
-                    if st.session_state['title_3'] is not None:
+                    if st.session_state["title_3"] is not None:
                         st.write("### Title")
-                        st.write(st.session_state['title_3'])
+                        st.write(st.session_state["title_3"])
                         st.write("### Subtitle")
                         st.write(st.session_state.subtitle_3)
                         progress += 0.16667
@@ -692,7 +707,7 @@ def main():
                         st.write(st.session_state.blog_outline_3)
                         progress += 0.16667
                         progress_bar.progress(progress)
-                
+
                 with tab4:
                     if st.session_state.draft1_3 is not None:
                         st.write("### Draft 1")
@@ -709,7 +724,7 @@ def main():
                         st.write(st.session_state.draft2_3)
                         progress += 0.16667
                         progress_bar.progress(progress)
-                
+
                 with tab6:
                     if st.session_state.blog_3 is not None:
                         st.write("### Final Blog")
@@ -721,6 +736,8 @@ def main():
                 print(e)
     else:
         st.warning("Please enter your API KEY first", icon="⚠")
+
+
 if __name__ == "__main__":
     with get_openai_callback() as cb:
         main()

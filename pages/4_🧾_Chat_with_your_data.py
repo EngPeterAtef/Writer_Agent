@@ -57,7 +57,7 @@ def count_words_with_bullet_points(input_string):
 
 
 def main():
-    load_dotenv()
+    # load_dotenv()
     keys_flag = False
 
     st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
@@ -68,7 +68,7 @@ def main():
 
         st.write("Please enter your OPENAI API KEY")
         OPENAI_API_KEY = st.text_input("OPENAI API KEY", type="password")
-        if OPENAI_API_KEY:
+        if OPENAI_API_KEY != "":
             keys_flag = True
     #     st.write("Please enter your Google API KEY")
     #     GOOGLE_API_KEY = st.text_input("GOOGLE API KEY", type="password")
@@ -610,7 +610,9 @@ def main():
                         # get the number of words in a string: split on whitespace and end of line characters
                         blog_word_count = count_words_with_bullet_points(blog)
                         st.write(f"> Blog word count: {blog_word_count}")
-                        st.write(f"> Generating the blog took ({round(end - start, 2)} s)")
+                        st.write(
+                            f"> Generating the blog took ({round(end - start, 2)} s)"
+                        )
                         st.success("Blog generated successfully")
                         progress = 1.0
                         progress_bar.progress(progress)
@@ -628,16 +630,16 @@ def main():
             try:
                 print("not pressed")
                 with tab1:
-                    if st.session_state['keywords_list_4'] is not None:
+                    if st.session_state["keywords_list_4"] is not None:
                         st.write("### Keywords list")
-                        st.write(st.session_state['keywords_list_4'])
+                        st.write(st.session_state["keywords_list_4"])
                         progress += 0.16667
                         progress_bar.progress(progress)
-                
+
                 with tab2:
-                    if st.session_state['title_4'] is not None:
+                    if st.session_state["title_4"] is not None:
                         st.write("### Title")
-                        st.write(st.session_state['title_4'])
+                        st.write(st.session_state["title_4"])
                         st.write("### Subtitle")
                         st.write(st.session_state.subtitle_4)
                         progress += 0.16667
@@ -649,7 +651,7 @@ def main():
                         st.write(st.session_state.blog_outline_4)
                         progress += 0.16667
                         progress_bar.progress(progress)
-                
+
                 with tab4:
                     if st.session_state.draft1_4 is not None:
                         st.write("### Draft 1")
@@ -666,7 +668,7 @@ def main():
                         st.write(st.session_state.draft2_4)
                         progress += 0.16667
                         progress_bar.progress(progress)
-                
+
                 with tab6:
                     if st.session_state.blog_4 is not None:
                         st.write("### Final Blog")
@@ -678,6 +680,8 @@ def main():
                 print(e)
     else:
         st.warning("Please enter your API KEY first", icon="⚠")
+
+
 if __name__ == "__main__":
     with get_openai_callback() as cb:
         main()
