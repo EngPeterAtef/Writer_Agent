@@ -64,7 +64,7 @@ def main():
 
         st.write("Please enter your OPENAI API KEY")
         OPENAI_API_KEY = st.text_input("OPENAI API KEY", type="password")
-        if OPENAI_API_KEY != '':
+        if OPENAI_API_KEY != "":
             keys_flag = True
     #     st.write("Please enter your Google API KEY")
     #     GOOGLE_API_KEY = st.text_input("GOOGLE API KEY", type="password")
