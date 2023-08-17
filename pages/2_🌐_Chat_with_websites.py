@@ -27,7 +27,7 @@ from langchain.chains import RetrievalQAWithSourcesChain
 
 import pyperclip
 from constants import (
-    OPENAI_API_KEY,
+    # OPENAI_API_KEY,
     GOOGLE_API_KEY,
     GOOGLE_CSE_ID,
     PINECONE_API_KEY,
@@ -57,11 +57,11 @@ def main():
 
     st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
     st.title("Blog Writer Agent: Write a blog about any topic 💬")
-    # with st.sidebar:
-    #     st.subheader("Enter the required keys")
+    with st.sidebar:
+        st.subheader("Enter the required keys")
 
-    #     st.write("Please enter your OPENAI API KEY")
-    #     OPENAI_API_KEY = st.text_input("OPENAI API KEY", type="password")
+        st.write("Please enter your OPENAI API KEY")
+        OPENAI_API_KEY = st.text_input("OPENAI API KEY", type="password")
 
     #     st.write("Please enter your Google API KEY")
     #     GOOGLE_API_KEY = st.text_input("GOOGLE API KEY", type="password")
@@ -78,7 +78,7 @@ def main():
     #         # warning message
     #         st.warning("Please enter your API KEY first", icon="⚠")
     #         keys_flag = False
-    keys_flag = True
+        keys_flag = True
     if keys_flag:
         os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
         os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
