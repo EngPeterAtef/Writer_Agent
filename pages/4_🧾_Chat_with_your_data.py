@@ -20,7 +20,7 @@ import time
 import os
 from langchain.document_loaders import UnstructuredURLLoader
 import pickle
-from langchain.vectorstores import FAISS
+from langchain.vectorstores import FAISS, Chroma
 from langchain.embeddings import OpenAIEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
@@ -47,7 +47,7 @@ from utils import (
 def main():
     # load_dotenv()
     keys_flag = False
-
+    print("main")
     st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
     st.title("Blog Writer Agent: Write a blog about any topic 💬")
 
@@ -307,7 +307,7 @@ def main():
                     pdf_reader = PdfReader(file)
                     # text = ""
                     file_docs = []
-                    print("num_pages",len(pdf_reader.pages))
+                    print("num_pages", len(pdf_reader.pages))
                     for i in range(len(pdf_reader.pages)):
                         text = pdf_reader.pages[i].extract_text()
                         file_docs.append(
@@ -422,7 +422,10 @@ def main():
                         print("Documents split.")
                         print("uploaded documents: ", len(uploaded_docs))
                         print("websites documents: ", len(data_docs))
-                        vectorStore_openAI = FAISS.from_documents(
+                        # vectorStore_openAI = FAISS.from_documents(
+                        #     data_docs + uploaded_docs, embedding=embeddings
+                        # )
+                        vectorStore_openAI = Chroma.from_documents(
                             data_docs + uploaded_docs, embedding=embeddings
                         )
                         # vectorStore_openAI = Pinecone.from_documents(
@@ -467,7 +470,7 @@ def main():
                         # write the blog
                         st.write("### Draft 1")
                         start = time.time()
-                        print("heeeeere", type(vectorStore_openAI))
+                        # print("heeeeere", type(vectorStore_openAI))
                         similar_docs = vectorStore_openAI.similarity_search(
                             f"blog outline: {blog_outline}",
                             k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,

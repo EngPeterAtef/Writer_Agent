@@ -20,7 +20,7 @@ import time
 import os
 from langchain.document_loaders import UnstructuredURLLoader
 import pickle
-from langchain.vectorstores import FAISS
+from langchain.vectorstores import FAISS,Chroma
 from langchain.embeddings import OpenAIEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
@@ -361,7 +361,10 @@ def main():
                         print("Data loaded.")
                         data_docs = text_splitter.split_documents(documents=data)
                         print("Documents split.")
-                        vectorStore_openAI = FAISS.from_documents(
+                        # vectorStore_openAI = FAISS.from_documents(
+                        #     data_docs, embedding=embeddings
+                        # )
+                        vectorStore_openAI = Chroma.from_documents(
                             data_docs, embedding=embeddings
                         )
                         print("Vector store created.")
