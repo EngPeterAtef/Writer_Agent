@@ -33,22 +33,9 @@ from constants import (
     PINECONE_API_KEY,
     PINECONE_API_ENV,
 )
-
-
-def count_words_with_bullet_points(input_string):
-    bullet_points = [
-        "*",
-        "-",
-        "+",
-        ".",
-    ]  # define the bullet points to look for
-    words_count = 0
-    for bullet_point in bullet_points:
-        input_string = input_string.replace(
-            bullet_point, ""
-        )  # remove the bullet points
-    words_count = len(input_string.split())  # count the words
-    return words_count
+from utils import (
+    count_words_with_bullet_points,
+)
 
 
 def main():
@@ -234,7 +221,7 @@ def main():
         {draft}
         The Result should be:
         1- All the mistakes according to the above criteria listed in bullet points:
-        [MISTAKES]
+        [MISTAKES]\n
         2- The edited draft of the blog:
         [EDITED DRAFT]
         """
@@ -477,9 +464,8 @@ def main():
                             wordCount=myWordCount,
                             summary=similar_docs,
                             draft=draft1,
-                            webpages=draft1_reference["sources"]
-                            + draft1_reference["answer"]
-                            + str([doc.metadata["source"] for doc in similar_docs]),
+                            webpages=str(draft1_reference)
+                            + str([doc.metadata for doc in similar_docs]),
                         )
                         end = time.time()
                         st.session_state.draft2_2 = draft2
@@ -507,9 +493,8 @@ def main():
                             wordCount=myWordCount,
                             summary=similar_docs,
                             draft=draft2,
-                            webpages=draft1_reference["sources"]
-                            + draft1_reference["answer"]
-                            + str([doc.metadata["source"] for doc in similar_docs]),
+                            webpages=str(draft1_reference)
+                            + str([doc.metadata for doc in similar_docs]),
                         )
                         end = time.time()
                         st.session_state.blog_2 = blog

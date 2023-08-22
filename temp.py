@@ -316,7 +316,7 @@ def main():
         {draft}
         The Result should be:
         1- All the mistakes according to the above criteria listed in bullet points:
-        [MISTAKES]
+        [MISTAKES]\n
         2- The edited draft of the blog:
         [EDITED DRAFT]
         """

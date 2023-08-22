@@ -39,21 +39,9 @@ from PyPDF2 import PdfReader
 # from langchain.vectorstores import Pinecone
 # import pinecone
 
-
-def count_words_with_bullet_points(input_string):
-    bullet_points = [
-        "*",
-        "-",
-        "+",
-        ".",
-    ]  # define the bullet points to look for
-    words_count = 0
-    for bullet_point in bullet_points:
-        input_string = input_string.replace(
-            bullet_point, ""
-        )  # remove the bullet points
-    words_count = len(input_string.split())  # count the words
-    return words_count
+from utils import (
+    count_words_with_bullet_points,
+)
 
 
 def main():
@@ -247,7 +235,7 @@ def main():
         {draft}
         The Result should be:
         1- All the mistakes according to the above criteria listed in bullet points:
-        [MISTAKES]
+        [MISTAKES]\n
         2- The edited draft of the blog:
         [EDITED DRAFT]
         """
@@ -317,17 +305,26 @@ def main():
             with st.spinner("Processing your documents..."):
                 for file in uploaded_files:
                     pdf_reader = PdfReader(file)
-                    text = ""
-                    for page in pdf_reader.pages:
-                        text += page.extract_text()
-                    uploaded_docs.append(
-                        Document(
-                            page_content=text,
-                            metadata={
-                                "source": file.name,
-                                "number_of_pages": len(pdf_reader.pages),
-                            },
+                    # text = ""
+                    file_docs = []
+                    print("num_pages",len(pdf_reader.pages))
+                    for i in range(len(pdf_reader.pages)):
+                        text = pdf_reader.pages[i].extract_text()
+                        file_docs.append(
+                            Document(
+                                page_content=text,
+                                metadata={
+                                    "source": file.name,
+                                    "page_no": i + 1,
+                                    "num_pages": len(pdf_reader.pages),
+                                },
+                            )
                         )
+                    # file_docs = text_splitter.split_documents(
+                    #     documents=file_docs
+                    # )
+                    uploaded_docs.extend(
+                        text_splitter.split_documents(documents=file_docs)
                     )
             # save uploaded_docs in the session state
             st.session_state.uploaded_docs = text_splitter.split_documents(
@@ -554,9 +551,8 @@ def main():
                             wordCount=myWordCount,
                             summary=similar_docs,
                             draft=draft1,
-                            sources=draft1_reference["sources"]
-                            + draft1_reference["answer"]
-                            + str([doc.metadata["source"] for doc in similar_docs]),
+                            sources=str(draft1_reference)
+                            + str([doc.metadata for doc in similar_docs]),
                         )
                         end = time.time()
                         st.session_state.draft2_4 = draft2
@@ -600,9 +596,8 @@ def main():
                             wordCount=myWordCount,
                             summary=similar_docs,
                             draft=draft1,
-                            sources=draft1_reference["sources"]
-                            + draft1_reference["answer"]
-                            + str([doc.metadata["source"] for doc in similar_docs]),
+                            sources=str(draft1_reference)
+                            + str([doc.metadata for doc in similar_docs]),
                         )
                         end = time.time()
                         st.session_state.blog_4 = blog

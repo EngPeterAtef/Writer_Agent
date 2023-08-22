@@ -20,8 +20,8 @@ import time
 import os
 from langchain.document_loaders import UnstructuredURLLoader
 import pickle
-from langchain.vectorstores import FAISS
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS, Chroma
+from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.callbacks import get_openai_callback
@@ -35,22 +35,9 @@ from constants import (
     PINECONE_API_KEY,
     PINECONE_API_ENV,
 )
-
-
-def count_words_with_bullet_points(input_string: str):
-    bullet_points = [
-        "*",
-        "-",
-        "+",
-        ".",
-    ]  # define the bullet points to look for
-    words_count = 0
-    for bullet_point in bullet_points:
-        input_string = input_string.replace(
-            bullet_point, ""
-        )  # remove the bullet points
-    words_count = len(input_string.split())  # count the words
-    return words_count
+from utils import (
+    count_words_with_bullet_points,
+)
 
 
 def main():
@@ -325,7 +312,7 @@ def main():
         {draft}
         The Result should be:
         1- All the mistakes according to the above criteria listed in bullet points:
-        [MISTAKES]
+        [MISTAKES]\n
         2- The edited draft of the blog:
         [EDITED DRAFT]
         """
@@ -359,6 +346,8 @@ def main():
         )
 
         # take the topic from the user
+        # 
+        # embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         embeddings = OpenAIEmbeddings()
         # with open("faiss_store_openai.pkl", "rb") as f:
         #     vectorStore_openAI = pickle.load(f)
@@ -382,17 +371,26 @@ def main():
             with st.spinner("Processing your documents..."):
                 for file in uploaded_files:
                     pdf_reader = PdfReader(file)
-                    text = ""
-                    for page in pdf_reader.pages:
-                        text += page.extract_text()
-                    uploaded_docs.append(
-                        Document(
-                            page_content=text,
-                            metadata={
-                                "source": file.name,
-                                "number_of_pages": len(pdf_reader.pages),
-                            },
+                    # text = ""
+                    file_docs = []
+                    print("num_pages",len(pdf_reader.pages))
+                    for i in range(len(pdf_reader.pages)):
+                        text = pdf_reader.pages[i].extract_text()
+                        file_docs.append(
+                            Document(
+                                page_content=text,
+                                metadata={
+                                    "source": file.name,
+                                    "page_no": i + 1,
+                                    "num_pages": len(pdf_reader.pages),
+                                },
+                            )
                         )
+                    # file_docs = text_splitter.split_documents(
+                    #     documents=file_docs
+                    # )
+                    uploaded_docs.extend(
+                        text_splitter.split_documents(documents=file_docs)
                     )
             # save uploaded_docs in the session state
             st.session_state.uploaded_docs = text_splitter.split_documents(
@@ -487,17 +485,26 @@ def main():
                             uploaded_docs = []
                         print("uploaded_docs: ", len(uploaded_docs))
                         print("Creating vector store...")
-                        vectorStore_openAI = FAISS.from_documents(
+                        # vectorStore_openAI = FAISS.from_documents(
+                        #     uploaded_docs, embedding=embeddings
+                        # )
+                        vectorStore_openAI = Chroma.from_documents(
                             uploaded_docs, embedding=embeddings
+                        )
+                        retriever = vectorStore_openAI.as_retriever(
+                            search_kwargs={"k": 10}
                         )
                         print("Vector store created.")
                         num_docs = len(uploaded_docs)
-                        similar_docs = vectorStore_openAI.similarity_search(
-                            f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                            k=10,
-                            # k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
+                        print("num_docs", num_docs)
+                        # similar_docs = vectorStore_openAI.similarity_search(
+                        #     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
+                        #     k=10,
+                        #     # k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
+                        # )
+                        similar_docs = retriever.get_relevant_documents(
+                            f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}"
                         )
-
                         blog_outline = writer_chain_outline.run(
                             topic=myTopic,
                             title=title,
@@ -522,13 +529,15 @@ def main():
                         # write the blog
                         st.write("### Draft 1")
                         start = time.time()
-                        print("heeeeere", type(vectorStore_openAI))
-                        similar_docs = vectorStore_openAI.similarity_search(
-                            f"blog outline: {blog_outline}",
-                            k=10,
-                            # k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
+                        # print("heeeeere", type(vectorStore_openAI))
+                        # similar_docs = vectorStore_openAI.similarity_search(
+                        #     f"blog outline: {blog_outline}",
+                        #     k=10,
+                        #     # k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
+                        # )
+                        similar_docs = retriever.get_relevant_documents(
+                            f"blog outline: {blog_outline}"
                         )
-
                         draft1 = writer_chain.run(
                             topic=myTopic,
                             outline=blog_outline,
@@ -553,18 +562,31 @@ def main():
                         st.write("### Draft 1 References")
                         start = time.time()
 
-                        chain = RetrievalQAWithSourcesChain.from_llm(
+                        # chain = RetrievalQAWithSourcesChain.from_llm(
+                        #     reference_llm,
+                        #     # chain_type="stuff",
+                        #     retriever=retriever,
+                        # )
+                        chain = RetrievalQAWithSourcesChain.from_chain_type(
                             reference_llm,
-                            retriever=vectorStore_openAI.as_retriever(),
+                            chain_type="stuff",
+                            retriever=retriever,
                         )
+
                         print("Chain created.")
 
                         draft1_reference = chain(
                             {
-                                "question": f"First, Search for each paragraph in the following text {draft1} to get the most relevant source. \ Then, list those sources and order with respect to the order of using them in the blog. The sources could be links or documents"
+                                "question": f"First, Search for each paragraph in the following text {draft1} to get the most relevant source. \ Then, list those sources and order with respect to the order of using them in the blog. The sources are documents with page numbers."
                             },
                             include_run_info=True,
                         )
+                        # draft1_reference_from_chain_type = chain_from_chain_type(
+                        #     {
+                        #         "question": f"First, Search for each paragraph in the following text {draft1} to get the most relevant source. \ Then, list those sources and order with respect to the order of using them in the blog. The sources should be the part of the document that contains the paragraph"
+                        #     },
+                        #     include_run_info=True,
+                        # )
                         end = time.time()
                         st.session_state.draft1_reference_3 = draft1_reference
                         # draft1_reference = reference_agent.run(
@@ -610,9 +632,8 @@ def main():
                             wordCount=myWordCount,
                             summary=similar_docs,
                             draft=draft1,
-                            sources=draft1_reference["sources"]
-                            + draft1_reference["answer"]
-                            + str([doc.metadata["source"] for doc in similar_docs]),
+                            sources=str(draft1_reference)
+                            + str([doc.metadata for doc in similar_docs]),
                         )
                         end = time.time()
                         st.session_state.draft2_3 = draft2
@@ -624,26 +645,27 @@ def main():
                             f"> Editing the first draft took ({round(end - start, 2)} s)"
                         )
                         st.success("Draft 2 generated successfully")
+                        ########################################
+                        # draft2 reference
+                        # st.write("### Draft 2 References")
+                        # start = time.time()
+                        # draft2_reference = chain_from_llm(
+                        #     {
+                        #         "question": f"First, Search for each paragraph in the following text {draft2} to get the most relevant source. \ Then, list those sources and order with respect to the order of using them in the blog. The sources are documents with page numbers."
+                        #     },
+                        #     include_run_info=True,
+
+                        # )
+                        # end = time.time()
+
+                        # st.write(draft2_reference["answer"])
+                        # st.write(draft2_reference["sources"])
+                        # st.write(
+                        #     f"> Generating the second draft reference took ({round(end - start, 2)} s)"
+                        # )
+                        ########################################
                         progress += 0.16667
                         progress_bar.progress(progress)
-                #########################################
-                # draft2 reference
-                # st.write("### Draft 2 References")
-                # start = time.time()
-                # draft2_reference = chain(
-                #     {
-                #         "question": f"First, Search for each paragraph in the following text {draft2} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
-                #     },
-                #     include_run_info=True,
-                # )
-                # end = time.time()
-
-                # st.write(draft2_reference["answer"])
-                # st.write(draft2_reference["sources"])
-                # st.write(
-                #     f"> Generating the second draft reference took ({round(end - start, 2)} s)"
-                # )
-                #########################################
                 # edit the second draft
                 with tab6:
                     with st.spinner("Writing the final blog..."):
@@ -656,9 +678,8 @@ def main():
                             wordCount=myWordCount,
                             summary=similar_docs,
                             draft=draft2,
-                            sources=draft1_reference["sources"]
-                            + draft1_reference["answer"]
-                            + str([doc.metadata["source"] for doc in similar_docs]),
+                            sources=str(draft1_reference)
+                            + str([doc.metadata for doc in similar_docs]),
                         )
                         end = time.time()
                         st.session_state.blog_3 = blog

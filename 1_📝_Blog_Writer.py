@@ -20,7 +20,7 @@ import time
 import os
 from langchain.document_loaders import UnstructuredURLLoader
 import pickle
-from langchain.vectorstores import FAISS
+from langchain.vectorstores import FAISS, Chroma
 from langchain.embeddings import OpenAIEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
@@ -35,22 +35,9 @@ from constants import (
     PINECONE_API_KEY,
     PINECONE_API_ENV,
 )
-
-
-def count_words_with_bullet_points(input_string):
-    bullet_points = [
-        "*",
-        "-",
-        "+",
-        ".",
-    ]  # define the bullet points to look for
-    words_count = 0
-    for bullet_point in bullet_points:
-        input_string = input_string.replace(
-            bullet_point, ""
-        )  # remove the bullet points
-    words_count = len(input_string.split())  # count the words
-    return words_count
+from utils import (
+    count_words_with_bullet_points,
+)
 
 
 def main():
@@ -345,7 +332,7 @@ def main():
         {draft}
         The Result should be:
         1- All the mistakes according to the above criteria listed in bullet points:
-        [MISTAKES]
+        [MISTAKES]\n
         2- The edited draft of the blog:
         [EDITED DRAFT]
         """
@@ -435,17 +422,26 @@ def main():
             with st.spinner("Processing your documents..."):
                 for file in uploaded_files:
                     pdf_reader = PdfReader(file)
-                    text = ""
-                    for page in pdf_reader.pages:
-                        text += page.extract_text()
-                    uploaded_docs.append(
-                        Document(
-                            page_content=text,
-                            metadata={
-                                "source": file.name,
-                                "number_of_pages": len(pdf_reader.pages),
-                            },
+                    # text = ""
+                    file_docs = []
+                    print("num_pages",len(pdf_reader.pages))
+                    for i in range(len(pdf_reader.pages)):
+                        text = pdf_reader.pages[i].extract_text()
+                        file_docs.append(
+                            Document(
+                                page_content=text,
+                                metadata={
+                                    "source": file.name,
+                                    "page_no": i + 1,
+                                    "num_pages": len(pdf_reader.pages),
+                                },
+                            )
                         )
+                    # file_docs = text_splitter.split_documents(
+                    #     documents=file_docs
+                    # )
+                    uploaded_docs.extend(
+                        text_splitter.split_documents(documents=file_docs)
                     )
             # save uploaded_docs in the session state
             st.session_state.uploaded_docs = text_splitter.split_documents(
@@ -646,9 +642,14 @@ def main():
                         st.write("### Blog Outline")
                         print("uploaded documents: ", len(uploaded_docs))
                         print("websites documents: ", len(data_docs))
-                        vectorStore_openAI = FAISS.from_documents(
+                        # vectorStore_openAI = FAISS.from_documents(
+                        #     data_docs + uploaded_docs, embedding=embeddings
+                        # )
+
+                        vectorStore_openAI = Chroma.from_documents(
                             data_docs + uploaded_docs, embedding=embeddings
                         )
+
                         print("Vector store created.")
                         num_docs = len(data_docs + uploaded_docs)
                         similar_docs = vectorStore_openAI.similarity_search(
@@ -724,8 +725,9 @@ def main():
                         st.write("### Draft 1 References")
                         start = time.time()
 
-                        chain = RetrievalQAWithSourcesChain.from_llm(
+                        chain = RetrievalQAWithSourcesChain.from_chain_type(
                             reference_llm,
+                            chain_type="stuff",
                             retriever=vectorStore_openAI.as_retriever(),
                         )
                         print("Chain created.")
@@ -741,7 +743,8 @@ def main():
                         # draft1_reference = reference_agent.run(
                         #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
                         # )
-                        st.write(draft1_reference["answer"] + "\n\n")
+                        st.write(draft1_reference["answer"] )
+
                         st.write(draft1_reference["sources"])
                         st.write(
                             f"> Generating the first draft reference took ({round(end - start, 2)} s)"
@@ -760,9 +763,8 @@ def main():
                             wordCount=myWordCount,
                             summary=tot_summary + tot_summary2 + str(similar_docs),
                             draft=draft1,
-                            sources=draft1_reference["sources"]
-                            + draft1_reference["answer"]
-                            + str([doc.metadata["source"] for doc in similar_docs]),
+                            sources=str(draft1_reference)
+                            + str([doc.metadata for doc in similar_docs]),
                         )
                         end = time.time()
                         st.session_state.draft2_1 = draft2
@@ -790,13 +792,32 @@ def main():
                             wordCount=myWordCount,
                             summary=tot_summary + tot_summary2 + str(similar_docs),
                             draft=draft1,
-                            sources=draft1_reference["sources"]
-                            + draft1_reference["answer"]
-                            + str([doc.metadata["source"] for doc in similar_docs]),
+                            sources=str(draft1_reference)
+                            + str([doc.metadata for doc in similar_docs]),
                         )
                         end = time.time()
                         st.session_state.blog_1 = blog
                         st.write(blog)
+                        # similar_docs = vectorStore_openAI.similarity_search(
+                        #     blog,
+                        #     k=10,
+                        #     # k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
+                        # )
+                        # st.write("### Final Blog References")
+                        # for i in range(len(similar_docs)):
+                        #     st.write(
+                        #         f"* Souce no. {i+1} : *"
+                        #         + similar_docs[i].metadata["source"]
+                        #         + ":"
+                        #     )
+                        #     try:
+                        #         st.write(
+                        #             f'>>> *Page no. {similar_docs[i].metadata["page"]}* : '
+                        #             + similar_docs[i].page_content
+                        #         )
+                        #     except:
+                        #         print(f">>>" + similar_docs[i].page_content)
+
                         # get the number of words in a string: split on whitespace and end of line characters
                         blog_word_count = count_words_with_bullet_points(blog)
                         st.write(f"> Blog word count: {blog_word_count}")
