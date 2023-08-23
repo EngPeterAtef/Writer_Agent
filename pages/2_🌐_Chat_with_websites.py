@@ -22,7 +22,7 @@ from langchain.document_loaders import UnstructuredURLLoader
 import pickle
 from langchain.vectorstores import FAISS, Chroma
 from langchain.embeddings import OpenAIEmbeddings
-import faiss
+# import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 
 import pyperclip
