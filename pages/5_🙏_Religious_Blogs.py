@@ -20,11 +20,12 @@ import time
 import os
 # from langchain.document_loaders import UnstructuredURLLoader
 # import pickle
-from langchain.vectorstores import FAISS, Chroma
+from langchain.vectorstores import FAISS, Chroma, Qdrant
 from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
 # import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.callbacks import get_openai_callback
+from qdrant_client import QdrantClient
 
 # import pyperclip
 from PyPDF2 import PdfReader
@@ -283,18 +284,6 @@ def main():
             # verbose=True,
         )
 
-        # def google_search_results(topic):
-        #     results = google.results(query=myTopic, num_results=10)
-        #     return results
-
-        # reference agent
-        # reference_tools = [
-        #     Tool(
-        #         name="Google Search Results",
-        #         description="Search engine useful to get the most relevant web pages about single topic in general.",
-        #         func=google_search_results,
-        #     ),
-        # ]
 
         reference_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
         # reference_agent = initialize_agent(
@@ -361,57 +350,25 @@ def main():
         # embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         embeddings = OpenAIEmbeddings()
 
+        client = QdrantClient(
+            QDRANT_HOST,
+            api_key=QDRANT_API_KEY,
+        )
+
+        vectorStore_openAI = Qdrant(
+            client=client,
+            collection_name=QDRANT_COLLECTION_NAME,
+            embeddings=embeddings,
+        )
 
         st.subheader(
             "This is a blog writer agent that uses the following as sources of information:"
         )
         # unordered list
-        st.markdown("""- Uploading PDF documents""")
+        st.markdown("""- Bible""")
+        st.markdown("""- Quran""")
 
         myTopic = st.text_input("Write a blog about: ", key="query")
-        # upload documents feature
-        uploaded_docs = []
-        uploaded_files = st.file_uploader(
-            "Upload PDF documents",
-            accept_multiple_files=True,
-            type="pdf",
-        )
-        process_btn = st.button("Process Documents", use_container_width=True)
-        if process_btn and uploaded_files:
-            with st.spinner("Processing your documents..."):
-                for file in uploaded_files:
-                    pdf_reader = PdfReader(file)
-                    # text = ""
-                    file_docs = []
-                    print("num_pages", len(pdf_reader.pages))
-                    for i in range(len(pdf_reader.pages)):
-                        text = pdf_reader.pages[i].extract_text()
-                        file_docs.append(
-                            Document(
-                                page_content=text,
-                                metadata={
-                                    "source": file.name,
-                                    "page_no": i + 1,
-                                    "num_pages": len(pdf_reader.pages),
-                                },
-                            )
-                        )
-                    # file_docs = text_splitter.split_documents(
-                    #     documents=file_docs
-                    # )
-                    uploaded_docs.extend(
-                        text_splitter.split_documents(documents=file_docs)
-                    )
-            # save uploaded_docs in the session state
-            st.session_state.uploaded_docs = text_splitter.split_documents(
-                documents=uploaded_docs
-            )
-            st.success(
-                "Documents processed successfully. Now you can use the documents in the blog"
-            )
-
-        if process_btn and not uploaded_files:
-            st.warning("Please upload documents first")
 
         myWordCount = st.number_input(
             "Enter the word count of the blog", min_value=100, max_value=3000, step=100
@@ -448,7 +405,7 @@ def main():
                             f"Search about {myTopic} and use the results to get the important keywords related to {myTopic} to help to write a blog about {myTopic}."
                         )
                         end = time.time()
-                        st.session_state.keywords_list_3 = keyword_list
+                        st.session_state.keywords_list_5 = keyword_list
                         # show the keywords list to the user
                         st.write(keyword_list)
                         st.write(
@@ -468,8 +425,8 @@ def main():
                             f"Suggest a suitable subtitle for a blog about {myTopic} for the a blog with a title {title} using the following keywords {keyword_list}?",
                         )
                         end = time.time()
-                        st.session_state.title_3 = title
-                        st.session_state.subtitle_3 = subtitle
+                        st.session_state.title_5 = title
+                        st.session_state.subtitle_5 = subtitle
                         st.write(title)
                         st.write("### Subtitle")
                         st.write(subtitle)
@@ -484,26 +441,14 @@ def main():
                         # write the blog outline
                         st.write("### Blog Outline")
                         start = time.time()
-                        if "uploaded_docs" in st.session_state:
-                            uploaded_docs = st.session_state.uploaded_docs
-                        else:
-                            uploaded_docs = []
-                        print("uploaded_docs: ", len(uploaded_docs))
-                        print("Creating vector store...")
-                        # vectorStore_openAI = FAISS.from_documents(
-                        #     uploaded_docs, embedding=embeddings
-                        # )
-                        vectorStore_openAI = Chroma.from_documents(
-                            uploaded_docs, embedding=embeddings
-                        )
-                        # vectorStore_openAI.add_documents(uploaded_docs)
+                    
+                        print("reading vector store...")
+
 
                         print("Vector store created.")
                         retriever = vectorStore_openAI.as_retriever(
                             search_kwargs={"k": 10}
                         )
-                        num_docs = len(uploaded_docs)
-                        print("num_docs", num_docs)
                         # similar_docs = vectorStore_openAI.similarity_search(
                         #     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
                         #     k=10,
@@ -520,7 +465,7 @@ def main():
                             keywords=keyword_list,
                         )
                         end = time.time()
-                        st.session_state.blog_outline_3 = blog_outline
+                        st.session_state.blog_outline_5 = blog_outline
                         st.write(blog_outline)
                         # get the number of words in a string: split on whitespace and end of line characters
                         # blog_outline_word_count = count_words_with_bullet_points(blog_outline)
@@ -536,12 +481,6 @@ def main():
                         # write the blog
                         st.write("### Draft 1")
                         start = time.time()
-                        # print("heeeeere", type(vectorStore_openAI))
-                        # similar_docs = vectorStore_openAI.similarity_search(
-                        #     f"blog outline: {blog_outline}",
-                        #     k=10,
-                        #     # k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
-                        # )
                         similar_docs = retriever.get_relevant_documents(
                             f"blog outline: {blog_outline}"
                         )
@@ -553,7 +492,7 @@ def main():
                             wordCount=myWordCount,
                         )
                         end = time.time()
-                        st.session_state.draft1_3 = draft1
+                        st.session_state.draft1_5 = draft1
                         st.write(draft1)
                         # get the number of words in a string: split on whitespace and end of line characters
                         draft1_word_count = count_words_with_bullet_points(draft1)
@@ -595,7 +534,7 @@ def main():
                         #     include_run_info=True,
                         # )
                         end = time.time()
-                        st.session_state.draft1_reference_3 = draft1_reference
+                        st.session_state.draft1_reference_5 = draft1_reference
                         # draft1_reference = reference_agent.run(
                         #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
                         # )
@@ -643,7 +582,7 @@ def main():
                             + str([doc.metadata for doc in similar_docs]),
                         )
                         end = time.time()
-                        st.session_state.draft2_3 = draft2
+                        st.session_state.draft2_5 = draft2
                         st.write(draft2)
                         # get the number of words in a string: split on whitespace and end of line characters
                         draft2_word_count = count_words_with_bullet_points(draft2)
@@ -652,24 +591,6 @@ def main():
                             f"> Editing the first draft took ({round(end - start, 2)} s)"
                         )
                         st.success("Draft 2 generated successfully")
-                        ########################################
-                        # draft2 reference
-                        # st.write("### Draft 2 References")
-                        # start = time.time()
-                        # draft2_reference = chain_from_llm(
-                        #     {
-                        #         "question": f"First, Search for each paragraph in the following text {draft2} to get the most relevant source. \ Then, list those sources and order with respect to the order of using them in the blog. The sources are documents with page numbers."
-                        #     },
-                        #     include_run_info=True,
-
-                        # )
-                        # end = time.time()
-
-                        # st.write(draft2_reference["answer"])
-                        # st.write(draft2_reference["sources"])
-                        # st.write(
-                        #     f"> Generating the second draft reference took ({round(end - start, 2)} s)"
-                        # )
                         ########################################
                         progress += 0.16667
                         progress_bar.progress(progress)
@@ -689,7 +610,7 @@ def main():
                             + str([doc.metadata for doc in similar_docs]),
                         )
                         end = time.time()
-                        st.session_state.blog_3 = blog
+                        st.session_state.blog_5 = blog
                         st.write(blog)
                         # get the number of words in a string: split on whitespace and end of line characters
                         blog_word_count = count_words_with_bullet_points(blog)
@@ -714,49 +635,49 @@ def main():
             try:
                 print("not pressed")
                 with tab1:
-                    if st.session_state["keywords_list_3"] is not None:
+                    if st.session_state["keywords_list_5"] is not None:
                         st.write("### Keywords list")
-                        st.write(st.session_state["keywords_list_3"])
+                        st.write(st.session_state["keywords_list_5"])
                         progress += 0.16667
                         progress_bar.progress(progress)
 
                 with tab2:
-                    if st.session_state["title_3"] is not None:
+                    if st.session_state["title_5"] is not None:
                         st.write("### Title")
-                        st.write(st.session_state["title_3"])
+                        st.write(st.session_state["title_5"])
                         st.write("### Subtitle")
-                        st.write(st.session_state.subtitle_3)
+                        st.write(st.session_state.subtitle_5)
                         progress += 0.16667
                         progress_bar.progress(progress)
 
                 with tab3:
-                    if st.session_state.blog_outline_3 is not None:
+                    if st.session_state.blog_outline_5 is not None:
                         st.write("### Blog Outline")
-                        st.write(st.session_state.blog_outline_3)
+                        st.write(st.session_state.blog_outline_5)
                         progress += 0.16667
                         progress_bar.progress(progress)
 
                 with tab4:
-                    if st.session_state.draft1_3 is not None:
+                    if st.session_state.draft1_5 is not None:
                         st.write("### Draft 1")
-                        st.write(st.session_state.draft1_3)
+                        st.write(st.session_state.draft1_5)
                         st.write("### Draft 1 References")
-                        st.write(st.session_state.draft1_reference_3["answer"] + "\n\n")
-                        st.write(st.session_state.draft1_reference_3["sources"])
+                        st.write(st.session_state.draft1_reference_5["answer"] + "\n\n")
+                        st.write(st.session_state.draft1_reference_5["sources"])
                         progress += 0.16667
                         progress_bar.progress(progress)
 
                 with tab5:
-                    if st.session_state.draft2_3 is not None:
+                    if st.session_state.draft2_5 is not None:
                         st.write("### Draft 2")
-                        st.write(st.session_state.draft2_3)
+                        st.write(st.session_state.draft2_5)
                         progress += 0.16667
                         progress_bar.progress(progress)
 
                 with tab6:
-                    if st.session_state.blog_3 is not None:
+                    if st.session_state.blog_5 is not None:
                         st.write("### Final Blog")
-                        st.write(st.session_state.blog_3)
+                        st.write(st.session_state.blog_5)
                         progress = 1.0
                         progress_bar.progress(progress)
                         st.balloons()

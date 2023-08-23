@@ -30,8 +30,6 @@ from constants import (
     # OPENAI_API_KEY,
     GOOGLE_API_KEY,
     GOOGLE_CSE_ID,
-    PINECONE_API_KEY,
-    PINECONE_API_ENV,
 )
 from utils import (
     count_words_with_bullet_points,
@@ -48,9 +46,17 @@ def main():
         st.subheader("Enter the required keys")
 
         st.write("Please enter your OPENAI API KEY")
-        OPENAI_API_KEY = st.text_input("OPENAI API KEY", type="password")
+        OPENAI_API_KEY = st.text_input(
+            "OPENAI API KEY",
+            type="password",
+            value=st.session_state.OPENAI_API_KEY
+            if "OPENAI_API_KEY" in st.session_state
+            else "",
+        )        
         if OPENAI_API_KEY != "":
             keys_flag = True
+            st.session_state.OPENAI_API_KEY = OPENAI_API_KEY
+
     #     st.write("Please enter your Google API KEY")
     #     GOOGLE_API_KEY = st.text_input("GOOGLE API KEY", type="password")
 
@@ -66,12 +72,10 @@ def main():
     #         # warning message
     #         st.warning("Please enter your API KEY first", icon="⚠")
     #         keys_flag = False
-    if keys_flag:
+    if keys_flag or "OPENAI_API_KEY" in st.session_state:
         os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
         os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
         os.environ["GOOGLE_CSE_ID"] = GOOGLE_CSE_ID
-        os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
-        os.environ["PINECONE_API_ENV"] = PINECONE_API_ENV
         # search engines
         wiki = WikipediaAPIWrapper()
         google = GoogleSearchAPIWrapper()

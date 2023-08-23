@@ -32,18 +32,9 @@ from constants import (
     # OPENAI_API_KEY,
     GOOGLE_API_KEY,
     GOOGLE_CSE_ID,
-    PINECONE_API_KEY,
-    PINECONE_API_ENV,
 )
 from utils import (
     count_words_with_bullet_points,
-    # llm_keywords,
-    # title_llm,
-    # summarize_llm,    
-    # writer_outline_llm,
-    # writer_llm,
-    # reference_llm,
-    # evaluation_llm,
 )
 
 
@@ -57,10 +48,16 @@ def main():
         st.subheader("Enter the required keys")
 
         st.write("Please enter your OPENAI API KEY")
-        OPENAI_API_KEY = st.text_input("OPENAI API KEY", type="password")
+        OPENAI_API_KEY = st.text_input(
+            "OPENAI API KEY",
+            type="password",
+            value=st.session_state.OPENAI_API_KEY
+            if "OPENAI_API_KEY" in st.session_state
+            else "",
+        )
         if OPENAI_API_KEY != "":
             keys_flag = True
-
+            st.session_state.OPENAI_API_KEY = OPENAI_API_KEY
     #     st.write("Please enter your Google API KEY")
     #     GOOGLE_API_KEY = st.text_input("GOOGLE API KEY", type="password")
 
@@ -76,12 +73,10 @@ def main():
     #         # warning message
     #         st.warning("Please enter your API KEY first", icon="⚠")
     #         keys_flag = False
-    if keys_flag:
+    if keys_flag or "OPENAI_API_KEY" in st.session_state:
         os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
         os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
         os.environ["GOOGLE_CSE_ID"] = GOOGLE_CSE_ID
-        os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
-        os.environ["PINECONE_API_ENV"] = PINECONE_API_ENV
         # search engines
         wiki = WikipediaAPIWrapper()
         wikiQuery = WikipediaQueryRun(api_wrapper=wiki)
@@ -148,7 +143,7 @@ def main():
             template=summary_prompt,
             input_variables=["essay"],
         )
-        
+
         summary_chain = LLMChain(
             llm=summarize_llm,
             prompt=summary_prompt_template,
@@ -221,27 +216,6 @@ def main():
         [BODY IN DETIALED BULLET POINTS]
         [SUMMARY AND CONCLUSION]
         """
-        # prompt_writer_outline = """You are an expert online blogger with expert writing skills and I want you to only write out the breakdown of each section of the blog on the topic of {topic}
-        # using the following information:
-        # keywords: {keywords}.
-        # The title is: {title}.
-        # The subtitle is: {subtitle}.
-        # google results: {google_results}.
-        # wiki results: {wiki_results}.
-        # duck results: {duck_results}.
-        # google summary: {google_summary}.
-        # duck summary: {duck_summary}.
-        # The results summary is: {summary}.
-        # Websites: {websites} will be used as references so at the end of each paragraph, you should add a reference to the website using the webstie number in [].
-        # The outline should be very detailed so that the number of words will be maximized so use all the previous information, with an introduction at the beginning and a conclusion at the end of the blog.
-        # use the following template to write the blog:
-        # [TITLE]
-        # [SUBTITLE]
-        # [introduction]
-        # [BODY IN DETIALED BULLET POINTS]
-        # [SUMMARY AND CONCLUSION]
-        # [REFERENCES]
-        # """
         prompt_writer = """You are an experienced writer and author and you will write a blog in long form sentences using correct English grammar, where the quality would be suitable for an established online publisher.
             First, Search about the best way to write a blog about {topic}. THE BLOG MUST BE RELEVANT TO THE TOPIC.
             Second, use the following outline to write the blog: {outline} because the blog must write about the bullet points inside it and contain this information.
@@ -655,7 +629,7 @@ def main():
                         # vectorStore_openAI = FAISS.from_documents(
                         #     data_docs + uploaded_docs, embedding=embeddings
                         # )
-                        
+
                         vectorStore_openAI = Chroma.from_documents(
                             data_docs + uploaded_docs, embedding=embeddings
                         )
