@@ -81,9 +81,7 @@ def main():
                 ),
             ]
 
-    model = ChatOpenAI(
-        temperature=0, openai_api_key=OPENAI_API_KEY, model="gpt-3.5-turbo-16k"
-    )
+    model = ChatOpenAI(temperature=0, openai_api_key=OPENAI_API_KEY, model="gpt-4")
 
     prompt = (
         """You are a helpful AI that helps the user to write a blog about {task}."""

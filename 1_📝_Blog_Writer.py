@@ -37,6 +37,13 @@ from constants import (
 )
 from utils import (
     count_words_with_bullet_points,
+    # llm_keywords,
+    # title_llm,
+    # summarize_llm,    
+    # writer_outline_llm,
+    # writer_llm,
+    # reference_llm,
+    # evaluation_llm,
 )
 
 
@@ -80,9 +87,21 @@ def main():
         wikiQuery = WikipediaQueryRun(api_wrapper=wiki)
         google = GoogleSearchAPIWrapper()
         duck = DuckDuckGoSearchRun()
+        # models
 
+        llm_keywords = ChatOpenAI(temperature=0.5, model="gpt-4")
+        title_llm = ChatOpenAI(temperature=0.5, model="gpt-4")  # temperature=0.7
+        summarize_llm = ChatOpenAI(
+            temperature=0, model="gpt-3.5-turbo-16k"
+        )  # or OpenAI(temperature=0)
+        writer_outline_llm = ChatOpenAI(
+            temperature=0,
+            model="gpt-3.5-turbo-16k",
+        )
+        writer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
+        reference_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
+        evaluation_llm = ChatOpenAI(temperature=0, model="gpt-4")
         # Keyphrase extraction Agent
-        llm_keywords = ChatOpenAI(temperature=0.5)
         keyword_extractor_tools = [
             Tool(
                 name="Google Search",
@@ -105,7 +124,6 @@ def main():
             handle_parsing_errors=True,
         )
         # title and subtitle Agent
-        title_llm = OpenAI()  # temperature=0.7
         title_tools = [
             Tool(
                 name="Intermediate Answer",
@@ -130,9 +148,7 @@ def main():
             template=summary_prompt,
             input_variables=["essay"],
         )
-        summarize_llm = ChatOpenAI(
-            temperature=0, model="gpt-3.5-turbo-16k"
-        )  # or OpenAI(temperature=0)
+        
         summary_chain = LLMChain(
             llm=summarize_llm,
             prompt=summary_prompt_template,
@@ -274,17 +290,13 @@ def main():
         )
 
         # outline agent
-        writer_outline_llm = ChatOpenAI(
-            temperature=0,
-            model="gpt-3.5-turbo-16k",
-        )
+
         writer_chain_outline = LLMChain(
             llm=writer_outline_llm,
             prompt=prompt_writer_template_outline,
             # verbose=True,
         )
         # create a blog writer agent
-        writer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
         writer_chain = LLMChain(
             llm=writer_llm,
             prompt=prompt_writer_template,
@@ -305,7 +317,6 @@ def main():
         #     ),
         # ]
 
-        reference_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
         # reference_agent = initialize_agent(
         #     reference_tools,
         #     llm=reference_llm,  # OpenAI(temperature=0),
@@ -317,7 +328,6 @@ def main():
         # )
 
         # evaluation agent
-        evaluation_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
 
         evaluation_prompt = """You are an expert blogs editor and you will edit the draft to satisfy the following criteria:
         1- The blog must be relevant to {topic}.
@@ -424,7 +434,7 @@ def main():
                     pdf_reader = PdfReader(file)
                     # text = ""
                     file_docs = []
-                    print("num_pages",len(pdf_reader.pages))
+                    print("num_pages", len(pdf_reader.pages))
                     for i in range(len(pdf_reader.pages)):
                         text = pdf_reader.pages[i].extract_text()
                         file_docs.append(
@@ -645,7 +655,7 @@ def main():
                         # vectorStore_openAI = FAISS.from_documents(
                         #     data_docs + uploaded_docs, embedding=embeddings
                         # )
-
+                        
                         vectorStore_openAI = Chroma.from_documents(
                             data_docs + uploaded_docs, embedding=embeddings
                         )
@@ -743,7 +753,7 @@ def main():
                         # draft1_reference = reference_agent.run(
                         #     f"First, Search for each paragraph in the following text {draft1} to get the most relevant links. \ Then, list those links and order with respect to the order of using them in the blog."
                         # )
-                        st.write(draft1_reference["answer"] )
+                        st.write(draft1_reference["answer"])
 
                         st.write(draft1_reference["sources"])
                         st.write(

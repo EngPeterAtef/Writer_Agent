@@ -20,7 +20,7 @@ import time
 import os
 from langchain.document_loaders import UnstructuredURLLoader
 import pickle
-from langchain.vectorstores import FAISS,Chroma
+from langchain.vectorstores import FAISS, Chroma
 from langchain.embeddings import OpenAIEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
@@ -78,7 +78,7 @@ def main():
         duck = DuckDuckGoSearchRun()
 
         # Keyphrase extraction Agent
-        llm_keywords = ChatOpenAI(temperature=0.5)
+        llm_keywords = ChatOpenAI(temperature=0.5, model="gpt-4")
         keyword_extractor_tools = [
             Tool(
                 name="Google Search",
@@ -101,7 +101,7 @@ def main():
             handle_parsing_errors=True,
         )
         # title and subtitle Agent
-        title_llm = OpenAI()  # temperature=0.7
+        title_llm = ChatOpenAI(temperature=0.5, model="gpt-4")  # temperature=0.7
         title_tools = [
             Tool(
                 name="Intermediate Answer",
@@ -206,7 +206,7 @@ def main():
         reference_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
 
         # evaluation agent
-        evaluation_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
+        evaluation_llm = ChatOpenAI(temperature=0, model="gpt-4")
 
         evaluation_prompt = """You are an expert blogs editor and you will edit the draft to satisfy the following criteria:
         1- The blog must be relevant to {topic}.

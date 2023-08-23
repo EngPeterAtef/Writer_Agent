@@ -81,7 +81,7 @@ def main():
         duck = DuckDuckGoSearchRun()
 
         # Keyphrase extraction Agent
-        llm_keywords = ChatOpenAI(temperature=0.5)
+        llm_keywords = ChatOpenAI(temperature=0.5, model="gpt-4")
         keyword_extractor_tools = [
             Tool(
                 name="Google Search",
@@ -104,7 +104,7 @@ def main():
             handle_parsing_errors=True,
         )
         # title and subtitle Agent
-        title_llm = OpenAI()  # temperature=0.7
+        title_llm = ChatOpenAI(temperature=0.5, model="gpt-4")  # temperature=0.7
         title_tools = [
             Tool(
                 name="Intermediate Answer",
@@ -346,7 +346,7 @@ def main():
         )
 
         # take the topic from the user
-        # 
+        #
         # embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         embeddings = OpenAIEmbeddings()
         # with open("faiss_store_openai.pkl", "rb") as f:
@@ -373,7 +373,7 @@ def main():
                     pdf_reader = PdfReader(file)
                     # text = ""
                     file_docs = []
-                    print("num_pages",len(pdf_reader.pages))
+                    print("num_pages", len(pdf_reader.pages))
                     for i in range(len(pdf_reader.pages)):
                         text = pdf_reader.pages[i].extract_text()
                         file_docs.append(
