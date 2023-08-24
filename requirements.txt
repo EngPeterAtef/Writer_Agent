@@ -1,16 +1,16 @@
-streamlit==1.25.0
 langchain==0.0.271
-python-dotenv
+PyPDF2==3.0.1
+pyperclip==1.8.2
+python-dotenv==1.0.0
+# qdrant_client==1.4.0
+streamlit==1.18.1
 altair<5
 wikipedia
 google-api-python-client
 duckduckgo-search
 openai
 tiktoken
-pyperclip
 pdf2image
 pytesseract
 unstructured
-PyPDF2
-qdrant_client
 chromadb
