@@ -25,11 +25,7 @@ from langchain.embeddings import OpenAIEmbeddings
 # import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.callbacks import get_openai_callback
-from constants import (
-    # OPENAI_API_KEY,
-    GOOGLE_API_KEY,
-    GOOGLE_CSE_ID,
-)
+
 
 # import pyperclip
 from PyPDF2 import PdfReader
@@ -43,7 +39,7 @@ from utils import (
 
 
 def main():
-    # load_dotenv()
+    load_dotenv()
     keys_flag = False
     print("main")
     st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
@@ -82,8 +78,8 @@ def main():
 
     if keys_flag or "OPENAI_API_KEY" in st.session_state:
         os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-        os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
-        os.environ["GOOGLE_CSE_ID"] = GOOGLE_CSE_ID
+        # os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+        # os.environ["GOOGLE_CSE_ID"] = GOOGLE_CSE_ID
         # pinecone.init(
         #     api_key=PINECONE_API_KEY,
         #     environmet=PINECONE_API_ENV,

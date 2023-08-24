@@ -37,7 +37,7 @@ from utils import (
 
 
 def main():
-    # load_dotenv()
+    load_dotenv()
     keys_flag = False
 
     st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
@@ -74,8 +74,8 @@ def main():
     #         keys_flag = False
     if keys_flag or "OPENAI_API_KEY" in st.session_state:
         os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-        os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
-        os.environ["GOOGLE_CSE_ID"] = GOOGLE_CSE_ID
+        # os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+        # os.environ["GOOGLE_CSE_ID"] = GOOGLE_CSE_ID
         # search engines
         wiki = WikipediaAPIWrapper()
         google = GoogleSearchAPIWrapper()

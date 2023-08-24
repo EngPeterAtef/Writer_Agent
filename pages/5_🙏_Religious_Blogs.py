@@ -31,8 +31,6 @@ from qdrant_client import QdrantClient
 from PyPDF2 import PdfReader
 from constants import (
     # OPENAI_API_KEY,
-    GOOGLE_API_KEY,
-    GOOGLE_CSE_ID,
     QDRANT_COLLECTION_NAME,
     QDRANT_API_KEY,
     QDRANT_HOST,
@@ -43,7 +41,7 @@ from utils import (
 
 
 def main():
-    # load_dotenv()
+    load_dotenv()
     keys_flag = False
 
     st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
@@ -63,28 +61,8 @@ def main():
             keys_flag = True
             st.session_state.OPENAI_API_KEY = OPENAI_API_KEY
 
-    #     st.write("Please enter your Google API KEY")
-    #     GOOGLE_API_KEY = st.text_input("GOOGLE API KEY", type="password")
-
-    #     st.write("Please enter your Google CX KEY")
-    #     GOOGLE_CX_KEY = st.text_input("GOOGLE CX KEY", type="password")
-
-    #     if OPENAI_API_KEY and GOOGLE_API_KEY and GOOGLE_CX_KEY:
-    #         os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-    #         os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
-    #         os.environ["GOOGLE_CSE_ID"] = GOOGLE_CX_KEY
-    #         keys_flag = True
-    #     else:
-    #         # warning message
-    #         st.warning("Please enter your API KEY first", icon="⚠")
-    #         keys_flag = False
     if keys_flag or "OPENAI_API_KEY" in st.session_state:
         os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
-        os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
-        os.environ["GOOGLE_CSE_ID"] = GOOGLE_CSE_ID
-        os.environ["QDRANT_API_KEY"] = QDRANT_API_KEY
-        os.environ["QDRANT_HOST"] = QDRANT_HOST
-        os.environ["QDRANT_COLLECTION_NAME"] = QDRANT_COLLECTION_NAME
 
         # search engines
         wiki = WikipediaAPIWrapper()
@@ -449,11 +427,6 @@ def main():
                         retriever = vectorStore_openAI.as_retriever(
                             search_kwargs={"k": 10}
                         )
-                        # similar_docs = vectorStore_openAI.similarity_search(
-                        #     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
-                        #     k=10,
-                        #     # k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
-                        # )
                         similar_docs = retriever.get_relevant_documents(
                             f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}"
                         )

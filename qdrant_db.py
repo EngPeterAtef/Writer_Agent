@@ -19,8 +19,8 @@ client = QdrantClient(
 )
 
 
-embeddings = HuggingFaceEmbeddings()
-
+# embeddings = HuggingFaceEmbeddings()
+embeddings = OpenAIEmbeddings()
 vectorStore_openAI = Qdrant(
     client=client,
     collection_name=os.getenv("QDRANT_COLLECTION_NAME"),
@@ -45,7 +45,8 @@ text_splitter = RecursiveCharacterTextSplitter(
     chunk_overlap=200,
 )
 # 1536 open ai embeddings
-vectors_config = models.VectorParams(size=768, distance=models.Distance.COSINE)
+# 768 hugging face embeddings
+vectors_config = models.VectorParams(size=1536, distance=models.Distance.COSINE)
 client.recreate_collection(
     collection_name=os.getenv("QDRANT_COLLECTION_NAME"),
     vectors_config=vectors_config,
