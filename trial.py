@@ -20,8 +20,6 @@ MODEL_PATH= os.getenv("MODEL_PATH", "./models/llama-2-7b-chat.gguf.q2_k.bin")
 n_gpu_layers = 1 
 n_batch = 512
 
-myTopic = 'Mo Salah'
-myWordCount = 200
 # Make sure the model path is correct for your system!
 llm = LlamaCpp(
     model_path=MODEL_PATH,
@@ -34,6 +32,8 @@ llm = LlamaCpp(
 )
 llm_chain = LLMChain(prompt=prompt, llm=llm)
 
+myTopic = 'Mo Salah'
+myWordCount = 200
 out = llm_chain.run(topic=myTopic, wordCount=myWordCount)
 print(out)
 print("the number of words with bullet points is: ", count_words_with_bullet_points(out))
