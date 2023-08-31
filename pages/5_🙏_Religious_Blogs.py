@@ -21,7 +21,7 @@ import os
 # from langchain.document_loaders import UnstructuredURLLoader
 # import pickle
 from langchain.vectorstores import FAISS, Chroma, Qdrant
-from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 # import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.callbacks import get_openai_callback
@@ -325,8 +325,7 @@ def main():
 
         # take the topic from the user
         #
-        # embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-        embeddings = OpenAIEmbeddings()
+        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
         client = QdrantClient(
             QDRANT_HOST,
