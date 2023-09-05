@@ -21,7 +21,7 @@ client = QdrantClient(
 
 embeddings = HuggingFaceEmbeddings()
 # embeddings = OpenAIEmbeddings()
-vectorStore_openAI = Qdrant(
+vectorStore = Qdrant(
     client=client,
     collection_name=os.getenv("QDRANT_COLLECTION_NAME"),
     embeddings=embeddings,
@@ -62,7 +62,7 @@ quran_docs = quran_loader.load_and_split(text_splitter=text_splitter)
 # print(bible_docs[0])
 # print(quran_docs[0])
 print("docs loaded")
-# vectorStore_openAI.from_documents(bible_docs,embedding=embeddings)
+# vectorStore.from_documents(bible_docs,embedding=embeddings)
 Qdrant.from_documents(
     bible_docs,
     embedding=embeddings,
@@ -72,7 +72,7 @@ Qdrant.from_documents(
     prefer_grpc=True,
 )
 print("bible added")
-vectorStore_openAI.add_documents(quran_docs)
+vectorStore.add_documents(quran_docs)
 print("quran added")
-docs = vectorStore_openAI.similarity_search("Jesus Christ")
+docs = vectorStore.similarity_search("Jesus Christ")
 print(docs[0])

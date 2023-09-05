@@ -23,7 +23,7 @@ import pickle
 from langchain.vectorstores import FAISS, Chroma
 from langchain.embeddings import HuggingFaceEmbeddings
 
-# import faiss
+import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 
 import pyperclip
@@ -264,7 +264,7 @@ def main():
         # take the topic from the user
         embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         # with open("faiss_store_openai.pkl", "rb") as f:
-        #     vectorStore_openAI = pickle.load(f)
+        #     vectorStore = pickle.load(f)
 
         st.subheader(
             "This is a blog writer agent that uses the following as sources of information:"
@@ -368,16 +368,16 @@ def main():
                         print("Data loaded.")
                         data_docs = text_splitter.split_documents(documents=data)
                         print("Documents split.")
-                        # vectorStore_openAI = FAISS.from_documents(
-                        #     data_docs, embedding=embeddings
-                        # )
-                        vectorStore_openAI = Chroma.from_documents(
+                        vectorStore = FAISS.from_documents(
                             data_docs, embedding=embeddings
                         )
+                        # vectorStore = Chroma.from_documents(
+                        #     data_docs, embedding=embeddings
+                        # )
                         print("Vector store created.")
                         st.write("### Blog Outline")
                         num_docs = len(data_docs)
-                        similar_docs = vectorStore_openAI.similarity_search(
+                        similar_docs = vectorStore.similarity_search(
                             f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
                             k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
                         )
@@ -407,7 +407,7 @@ def main():
                         st.write("### Draft 1")
                         start = time.time()
 
-                        similar_docs = vectorStore_openAI.similarity_search(
+                        similar_docs = vectorStore.similarity_search(
                             f"blog outline: {blog_outline}",
                             k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
                         )
@@ -436,13 +436,13 @@ def main():
                         start = time.time()
 
                         # with open("faiss_store_openai.pkl", "wb") as f:
-                        #     pickle.dump(vectorStore_openAI, f)
+                        #     pickle.dump(vectorStore, f)
 
                         print("Vector store saved.")
 
                         chain = RetrievalQAWithSourcesChain.from_llm(
                             reference_llm,
-                            retriever=vectorStore_openAI.as_retriever(),
+                            retriever=vectorStore.as_retriever(),
                         )
                         print("Chain created.")
 

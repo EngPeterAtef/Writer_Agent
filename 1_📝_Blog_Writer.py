@@ -22,7 +22,7 @@ from langchain.document_loaders import UnstructuredURLLoader
 import pickle
 from langchain.vectorstores import FAISS, Chroma
 from langchain.embeddings import HuggingFaceEmbeddings
-# import faiss
+import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.callbacks import get_openai_callback
 
@@ -85,7 +85,9 @@ def main():
         # models
 
         llm_keywords = ChatOpenAI(temperature=0.5, model="gpt-3.5-turbo-16k")
-        title_llm = ChatOpenAI(temperature=0.5, model="gpt-3.5-turbo-16k")  # temperature=0.7
+        title_llm = ChatOpenAI(
+            temperature=0.5, model="gpt-3.5-turbo-16k"
+        )  # temperature=0.7
         summarize_llm = ChatOpenAI(
             temperature=0, model="gpt-3.5-turbo-16k"
         )  # or OpenAI(temperature=0)
@@ -365,7 +367,7 @@ def main():
         # take the topic from the user
         embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         # with open("faiss_store_openai.pkl", "rb") as f:
-        #     vectorStore_openAI = pickle.load(f)
+        #     vectorStore = pickle.load(f)
 
         st.subheader(
             "This is a blog writer agent that uses the following as sources of information:"
@@ -626,23 +628,23 @@ def main():
                         st.write("### Blog Outline")
                         print("uploaded documents: ", len(uploaded_docs))
                         print("websites documents: ", len(data_docs))
-                        # vectorStore_openAI = FAISS.from_documents(
-                        #     data_docs + uploaded_docs, embedding=embeddings
-                        # )
-
-                        vectorStore_openAI = Chroma.from_documents(
+                        vectorStore = FAISS.from_documents(
                             data_docs + uploaded_docs, embedding=embeddings
                         )
 
+                        # vectorStore = Chroma.from_documents(
+                        #     data_docs + uploaded_docs, embedding=embeddings
+                        # )
+
                         print("Vector store created.")
                         num_docs = len(data_docs + uploaded_docs)
-                        similar_docs = vectorStore_openAI.similarity_search(
+                        similar_docs = vectorStore.similarity_search(
                             f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
                             k=10,
                             # k=int(0.1 * num_docs) if (int(0.1 * num_docs) < 28) else 28,
                         )
                         # with open("faiss_store_openai.pkl", "wb") as f:
-                        #     pickle.dump(vectorStore_openAI, f)
+                        #     pickle.dump(vectorStore, f)
 
                         # print("Vector store saved.")
 
@@ -677,7 +679,7 @@ def main():
                         st.write("### Draft 1")
                         start = time.time()
 
-                        similar_docs = vectorStore_openAI.similarity_search(
+                        similar_docs = vectorStore.similarity_search(
                             f"blog outline: {blog_outline}",
                             k=10,
                             # k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
@@ -712,7 +714,7 @@ def main():
                         chain = RetrievalQAWithSourcesChain.from_chain_type(
                             reference_llm,
                             chain_type="stuff",
-                            retriever=vectorStore_openAI.as_retriever(),
+                            retriever=vectorStore.as_retriever(),
                         )
                         print("Chain created.")
 
@@ -782,7 +784,7 @@ def main():
                         end = time.time()
                         st.session_state.blog_1 = blog
                         st.write(blog)
-                        # similar_docs = vectorStore_openAI.similarity_search(
+                        # similar_docs = vectorStore.similarity_search(
                         #     blog,
                         #     k=10,
                         #     # k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,

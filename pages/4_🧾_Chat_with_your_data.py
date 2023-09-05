@@ -273,7 +273,7 @@ def main():
         # take the topic from the user
         embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         # with open("faiss_store_openai.pkl", "rb") as f:
-        #     vectorStore_openAI = pickle.load(f)
+        #     vectorStore = pickle.load(f)
 
         st.subheader(
             "This is a blog writer agent that uses the following as sources of information:"
@@ -425,13 +425,13 @@ def main():
                         print("Documents split.")
                         print("uploaded documents: ", len(uploaded_docs))
                         print("websites documents: ", len(data_docs))
-                        # vectorStore_openAI = FAISS.from_documents(
-                        #     data_docs + uploaded_docs, embedding=embeddings
-                        # )
-                        vectorStore_openAI = Chroma.from_documents(
+                        vectorStore = FAISS.from_documents(
                             data_docs + uploaded_docs, embedding=embeddings
                         )
-                        # vectorStore_openAI = Pinecone.from_documents(
+                        # vectorStore = Chroma.from_documents(
+                        #     data_docs + uploaded_docs, embedding=embeddings
+                        # )
+                        # vectorStore = Pinecone.from_documents(
                         #     data_docs + uploaded_docs,
                         #     embeddings,
                         #     index_name=index_name,
@@ -439,11 +439,11 @@ def main():
                         print("Vector store created.")
 
                         # with open("faiss_store_openai.pkl", "wb") as f:
-                        #     pickle.dump(vectorStore_openAI, f)
+                        #     pickle.dump(vectorStore, f)
 
                         # get similar documents
                         num_docs = len(data_docs + uploaded_docs)
-                        similar_docs = vectorStore_openAI.similarity_search(
+                        similar_docs = vectorStore.similarity_search(
                             f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
                             k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
                         )
@@ -473,8 +473,8 @@ def main():
                         # write the blog
                         st.write("### Draft 1")
                         start = time.time()
-                        # print("heeeeere", type(vectorStore_openAI))
-                        similar_docs = vectorStore_openAI.similarity_search(
+                        # print("heeeeere", type(vectorStore))
+                        similar_docs = vectorStore.similarity_search(
                             f"blog outline: {blog_outline}",
                             k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
                         )
@@ -503,7 +503,7 @@ def main():
 
                         chain = RetrievalQAWithSourcesChain.from_llm(
                             reference_llm,
-                            retriever=vectorStore_openAI.as_retriever(),
+                            retriever=vectorStore.as_retriever(),
                         )
                         print("Chain created.")
 

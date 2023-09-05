@@ -335,7 +335,7 @@ def main():
             api_key=QDRANT_API_KEY,
         )
 
-        vectorStore_openAI = Qdrant(
+        vectorStore = Qdrant(
             client=client,
             collection_name=QDRANT_COLLECTION_NAME,
             embeddings=embeddings,
@@ -425,9 +425,7 @@ def main():
                         print("reading vector store...")
 
                         print("Vector store created.")
-                        retriever = vectorStore_openAI.as_retriever(
-                            search_kwargs={"k": 10}
-                        )
+                        retriever = vectorStore.as_retriever(search_kwargs={"k": 10})
                         similar_docs = retriever.get_relevant_documents(
                             f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}"
                         )

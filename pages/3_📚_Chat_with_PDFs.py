@@ -18,11 +18,12 @@ from langchain.chat_models import ChatOpenAI
 import streamlit as st
 import time
 import os
+
 # from langchain.document_loaders import UnstructuredURLLoader
 # import pickle
 from langchain.vectorstores import FAISS, Chroma
 from langchain.embeddings import HuggingFaceEmbeddings
-# import faiss
+import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.callbacks import get_openai_callback
 
@@ -57,7 +58,7 @@ def main():
             value=st.session_state.OPENAI_API_KEY
             if "OPENAI_API_KEY" in st.session_state
             else "",
-        )        
+        )
         if OPENAI_API_KEY != "":
             keys_flag = True
             st.session_state.OPENAI_API_KEY = OPENAI_API_KEY
@@ -115,7 +116,9 @@ def main():
             handle_parsing_errors=True,
         )
         # title and subtitle Agent
-        title_llm = ChatOpenAI(temperature=0.5, model="gpt-3.5-turbo-16k")  # temperature=0.7
+        title_llm = ChatOpenAI(
+            temperature=0.5, model="gpt-3.5-turbo-16k"
+        )  # temperature=0.7
         title_tools = [
             Tool(
                 name="Intermediate Answer",
@@ -360,7 +363,6 @@ def main():
         #
         embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-
         st.subheader(
             "This is a blog writer agent that uses the following as sources of information:"
         )
@@ -489,21 +491,19 @@ def main():
                             uploaded_docs = []
                         print("uploaded_docs: ", len(uploaded_docs))
                         print("Creating vector store...")
-                        # vectorStore_openAI = FAISS.from_documents(
-                        #     uploaded_docs, embedding=embeddings
-                        # )
-                        vectorStore_openAI = Chroma.from_documents(
+                        vectorStore = FAISS.from_documents(
                             uploaded_docs, embedding=embeddings
                         )
-                        # vectorStore_openAI.add_documents(uploaded_docs)
+                        # vectorStore = Chroma.from_documents(
+                        #     uploaded_docs, embedding=embeddings
+                        # )
+                        # vectorStore.add_documents(uploaded_docs)
 
                         print("Vector store created.")
-                        retriever = vectorStore_openAI.as_retriever(
-                            search_kwargs={"k": 10}
-                        )
+                        retriever = vectorStore.as_retriever(search_kwargs={"k": 10})
                         num_docs = len(uploaded_docs)
                         print("num_docs", num_docs)
-                        # similar_docs = vectorStore_openAI.similarity_search(
+                        # similar_docs = vectorStore.similarity_search(
                         #     f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}",
                         #     k=10,
                         #     # k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
@@ -535,8 +535,8 @@ def main():
                         # write the blog
                         st.write("### Draft 1")
                         start = time.time()
-                        # print("heeeeere", type(vectorStore_openAI))
-                        # similar_docs = vectorStore_openAI.similarity_search(
+                        # print("heeeeere", type(vectorStore))
+                        # similar_docs = vectorStore.similarity_search(
                         #     f"blog outline: {blog_outline}",
                         #     k=10,
                         #     # k=int(0.1 * num_docs) if int(0.1 * num_docs) < 28 else 28,
