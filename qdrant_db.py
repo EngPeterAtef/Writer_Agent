@@ -14,13 +14,14 @@ from langchain.document_loaders import (
 
 load_dotenv()
 client = QdrantClient(
-    os.getenv("QDRANT_HOST"),
+    url=os.getenv("QDRANT_HOST"),
     api_key=os.getenv("QDRANT_API_KEY"),
+    timeout=100000,
 )
 
 
-embeddings = HuggingFaceEmbeddings()
-# embeddings = OpenAIEmbeddings()
+# embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+embeddings = OpenAIEmbeddings()
 vectorStore = Qdrant(
     client=client,
     collection_name=os.getenv("QDRANT_COLLECTION_NAME"),
@@ -46,11 +47,11 @@ text_splitter = RecursiveCharacterTextSplitter(
 )
 # 1536 open ai embeddings
 # 768 hugging face embeddings
-vectors_config = models.VectorParams(size=768, distance=models.Distance.COSINE)
-client.recreate_collection(
-    collection_name=os.getenv("QDRANT_COLLECTION_NAME"),
-    vectors_config=vectors_config,
-)
+# vectors_config = models.VectorParams(size=1536, distance=models.Distance.COSINE)
+# client.recreate_collection(
+#     collection_name=os.getenv("QDRANT_COLLECTION_NAME"),
+#     vectors_config=vectors_config,
+# )
 print("collection created")
 bible_loader = PyMuPDFLoader("D:/projects/AI projects/privateGPT/test_docs/bible.pdf")
 quran_loader = PyMuPDFLoader(
@@ -62,15 +63,7 @@ quran_docs = quran_loader.load_and_split(text_splitter=text_splitter)
 # print(bible_docs[0])
 # print(quran_docs[0])
 print("docs loaded")
-# vectorStore.from_documents(bible_docs,embedding=embeddings)
-Qdrant.from_documents(
-    bible_docs,
-    embedding=embeddings,
-    url=os.getenv("QDRANT_HOST"),
-    api_key=os.getenv("QDRANT_API_KEY"),
-    collection_name=os.getenv("QDRANT_COLLECTION_NAME"),
-    prefer_grpc=True,
-)
+vectorStore.add_documents(bible_docs)
 print("bible added")
 vectorStore.add_documents(quran_docs)
 print("quran added")

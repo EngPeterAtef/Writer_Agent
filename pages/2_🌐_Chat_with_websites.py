@@ -21,7 +21,7 @@ import os
 from langchain.document_loaders import UnstructuredURLLoader
 import pickle
 from langchain.vectorstores import FAISS, Chroma
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
 
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
@@ -117,10 +117,12 @@ def main():
             ),
         ]
 
-        self_ask_with_search = initialize_agent(
-            title_tools,
-            title_llm,
-            agent=AgentType.SELF_ASK_WITH_SEARCH,
+        title_agent = initialize_agent(
+            agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            agent_name="title and subtitle writer",
+            agent_description="You are a helpful AI that helps the user to write a title and subtitle for a blog about specific topic based on the given keywords",
+            llm=title_llm,
+            tools=title_tools,
             verbose=True,
             handle_parsing_errors=True,
         )
@@ -262,7 +264,7 @@ def main():
         )
 
         # take the topic from the user
-        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        embeddings = OpenAIEmbeddings()
         # with open("faiss_store_openai.pkl", "rb") as f:
         #     vectorStore = pickle.load(f)
 
@@ -336,10 +338,10 @@ def main():
                     with st.spinner("Generating the title and subtitle..."):
                         st.write("### Title")
                         start = time.time()
-                        title = self_ask_with_search.run(
+                        title = title_agent.run(
                             f"Suggest a titel for a blog about {myTopic} using the following keywords {keyword_list}?",
                         )
-                        subtitle = self_ask_with_search.run(
+                        subtitle = title_agent.run(
                             f"Suggest a suitable subtitle for a blog about {myTopic} for the a blog with a title {title} using the following keywords {keyword_list}?",
                         )
                         end = time.time()

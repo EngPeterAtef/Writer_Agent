@@ -22,7 +22,7 @@ import os
 # from langchain.document_loaders import UnstructuredURLLoader
 # import pickle
 from langchain.vectorstores import FAISS, Chroma
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
 import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.callbacks import get_openai_callback
@@ -127,10 +127,10 @@ def main():
             ),
         ]
 
-        self_ask_with_search = initialize_agent(
+        title_agent = initialize_agent(
             title_tools,
             title_llm,
-            agent=AgentType.SELF_ASK_WITH_SEARCH,
+            agent=AgentType.title_agent,
             verbose=True,
             handle_parsing_errors=True,
         )
@@ -361,7 +361,7 @@ def main():
 
         # take the topic from the user
         #
-        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        embeddings = OpenAIEmbeddings()
 
         st.subheader(
             "This is a blog writer agent that uses the following as sources of information:"
@@ -462,10 +462,10 @@ def main():
                         # Getting Title and SubTitle
                         st.write("### Title")
                         start = time.time()
-                        title = self_ask_with_search.run(
+                        title = title_agent.run(
                             f"Suggest a titel for a blog about {myTopic} using the following keywords {keyword_list}?",
                         )
-                        subtitle = self_ask_with_search.run(
+                        subtitle = title_agent.run(
                             f"Suggest a suitable subtitle for a blog about {myTopic} for the a blog with a title {title} using the following keywords {keyword_list}?",
                         )
                         end = time.time()

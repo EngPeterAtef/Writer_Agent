@@ -5,7 +5,6 @@ from langchain.utilities import (
     GoogleSearchAPIWrapper,
 )
 from langchain.tools import WikipediaQueryRun, DuckDuckGoSearchRun
-from langchain import OpenAI
 from dotenv import load_dotenv
 
 from langchain.prompts import PromptTemplate
@@ -21,9 +20,9 @@ import os
 
 # from langchain.document_loaders import UnstructuredURLLoader
 # import pickle
-from langchain.vectorstores import FAISS, Chroma, Qdrant
-from langchain.embeddings import HuggingFaceEmbeddings
-
+from langchain.vectorstores import Qdrant
+from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
+from langchain import OpenAI
 # import faiss
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.callbacks import get_openai_callback
@@ -107,13 +106,15 @@ def main():
             ),
         ]
 
-        self_ask_with_search = initialize_agent(
-            title_tools,
-            title_llm,
-            agent=AgentType.SELF_ASK_WITH_SEARCH,
+        title_agent = initialize_agent(
+            agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            agent_name="title and subtitle writer",
+            agent_description="You are a helpful AI that helps the user to write a title and subtitle for a blog about specific topic based on the given keywords",
+            llm=title_llm,
+            tools=title_tools,
             verbose=True,
             handle_parsing_errors=True,
-        )
+        ) 
 
         # summarize the results separately
         summary_prompt = """Please Provide a summary of the following essay
@@ -267,15 +268,6 @@ def main():
         )
 
         reference_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
-        # reference_agent = initialize_agent(
-        #     reference_tools,
-        #     llm=reference_llm,  # OpenAI(temperature=0),
-        #     agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        #     agent_name="Reference Agent",
-        #     description="Agent required to get the web pages that are most relevant to the blog.",
-        #     verbose=True,
-        #     handle_parsing_errors=True,
-        # )
 
         # evaluation agent
         evaluation_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k")
@@ -328,11 +320,13 @@ def main():
 
         # take the topic from the user
         #
-        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        embeddings = OpenAIEmbeddings()
+
 
         client = QdrantClient(
-            QDRANT_HOST,
+            url=QDRANT_HOST,
             api_key=QDRANT_API_KEY,
+            timeout=100000,
         )
 
         vectorStore = Qdrant(
@@ -398,10 +392,10 @@ def main():
                         # Getting Title and SubTitle
                         st.write("### Title")
                         start = time.time()
-                        title = self_ask_with_search.run(
+                        title = title_agent.run(
                             f"Suggest a titel for a blog about {myTopic} using the following keywords {keyword_list}?",
                         )
-                        subtitle = self_ask_with_search.run(
+                        subtitle = title_agent.run(
                             f"Suggest a suitable subtitle for a blog about {myTopic} for the a blog with a title {title} using the following keywords {keyword_list}?",
                         )
                         end = time.time()
@@ -424,8 +418,8 @@ def main():
 
                         print("reading vector store...")
 
-                        print("Vector store created.")
                         retriever = vectorStore.as_retriever(search_kwargs={"k": 10})
+                        print("Vector store created.")
                         similar_docs = retriever.get_relevant_documents(
                             f"title: {title}, subtitle: {subtitle}, keywords: {keyword_list}"
                         )
