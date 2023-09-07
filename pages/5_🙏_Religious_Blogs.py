@@ -39,31 +39,31 @@ from constants import (
 from utils import (
     count_words_with_bullet_points,
 )
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
 
-
-def main():
+def main_function():
     load_dotenv()
     keys_flag = False
 
-    st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
-    st.title("Blog Writer Agent: Write a blog about any topic 💬")
-    with st.sidebar:
-        st.subheader("Enter the required keys")
+    # with st.sidebar:
+    #     st.subheader("Enter the required keys")
 
-        st.write("Please enter your OPENAI API KEY")
-        OPENAI_API_KEY = st.text_input(
-            "OPENAI API KEY",
-            type="password",
-            value=st.session_state.OPENAI_API_KEY
-            if "OPENAI_API_KEY" in st.session_state
-            else "",
-        )
-        if OPENAI_API_KEY != "":
-            keys_flag = True
-            st.session_state.OPENAI_API_KEY = OPENAI_API_KEY
-
-    if keys_flag or "OPENAI_API_KEY" in st.session_state:
-        os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+    #     st.write("Please enter your OPENAI API KEY")
+    #     OPENAI_API_KEY = st.text_input(
+    #         "OPENAI API KEY",
+    #         type="password",
+    #         value=st.session_state.OPENAI_API_KEY
+    #         if "OPENAI_API_KEY" in st.session_state
+    #         else "",
+    #     )
+    #     if OPENAI_API_KEY != "":
+    #         keys_flag = True
+    #         st.session_state.OPENAI_API_KEY = OPENAI_API_KEY
+    keys_flag = True
+    if keys_flag: # or "OPENAI_API_KEY" in st.session_state:
+        # os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
         # search engines
         wiki = WikipediaAPIWrapper()
@@ -652,7 +652,26 @@ def main():
     else:
         st.warning("Please enter your API KEY first", icon="⚠")
 
-
+def main():
+    st.set_page_config(page_title="Blog Writer Agent", page_icon="💬", layout="wide")
+    st.title("Blog Writer Agent: Write a blog about any topic 💬")
+    with open("./etc/secrets/config.yaml") as file:
+        config = yaml.load(file, Loader=SafeLoader)
+    authenticator = stauth.Authenticate(
+        config["credentials"],
+        config["cookie"]["name"],
+        config["cookie"]["key"],
+        config["cookie"]["expiry_days"],
+        config["preauthorized"],
+    )
+    name, authentication_status, username = authenticator.login("Login", "main")
+    if authentication_status:
+        main_function()
+        authenticator.logout("Logout", "main")
+    elif authentication_status == False:
+        st.error("Username/password is incorrect")
+    elif authentication_status == None:
+        st.warning("Please enter your username and password")
 if __name__ == "__main__":
     with get_openai_callback() as cb:
         main()
